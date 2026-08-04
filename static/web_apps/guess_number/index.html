@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guess Number with Lives</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    body { background-color: #030305; color: #fff; font-family: system-ui, sans-serif; min-height: 100vh; }
+    .glass { background: rgba(14, 14, 22, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glow-input { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; transition: all 0.2s; }
+    .glow-input:focus { border-color: #38bdf8; outline: none; box-shadow: 0 0 15px rgba(56, 189, 248, 0.25); }
+    .btn-sky { background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%); transition: all 0.3s; color: #000; font-weight: 700; }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="guessNumApp()">
+  <div class="relative z-10 w-full max-w-md mx-auto glass rounded-3xl p-8 shadow-2xl text-center space-y-6">
+    <h1 class="text-3xl font-black uppercase tracking-tight bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
+      🔢 Guess Number & Lives
+    </h1>
+    <p class="text-slate-400 text-xs">Guess 1 to 100 before you run out of ❤️ lives!</p>
+
+    <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl text-sm font-mono">
+      <span>Lives: <span class="text-rose-400" x-text="'❤️ '.repeat(lives)"></span></span>
+      <span>Tries: <span class="text-sky-300" x-text="tries"></span></span>
+    </div>
+
+    <input type="number" min="1" max="100" x-model.number="guess" @keyup.enter="checkGuess" placeholder="1-100" class="glow-input w-full px-4 py-3 rounded-xl text-center text-2xl font-bold font-mono">
+
+    <button @click="checkGuess" :disabled="over" class="btn-sky w-full py-3.5 rounded-xl font-bold text-sm disabled:opacity-40">
+      Check Guess
+    </button>
+
+    <div x-show="msg" class="p-4 rounded-xl text-sm font-bold border" :class="won?'bg-emerald-500/20 border-emerald-500/30 text-emerald-300':lost?'bg-rose-500/20 border-rose-500/30 text-rose-300':'bg-sky-500/20 border-sky-500/30 text-sky-300'" x-text="msg"></div>
+
+    <template x-if="over">
+      <button @click="resetGame" class="w-full py-3 bg-white/10 rounded-xl font-bold text-sm hover:bg-white/20">Restart</button>
+    </template>
+  </div>
+
+  <script>
+    function guessNumApp() {
+      return {
+        secret: Math.floor(Math.random()*100)+1, lives: 5, tries: 0, guess: null, msg: '', won: false, lost: false,
+        get over() { return this.won || this.lost; },
+        checkGuess() {
+          if (!this.guess || this.over) return;
+          this.tries++;
+          if (this.guess === this.secret) {
+            this.won = true; this.msg = `🎉 Fantastic! You got it in ${this.tries} tries!`;
+          } else {
+            this.lives--;
+            if (this.lives <= 0) {
+              this.lost = true; this.msg = `💀 Out of lives! Secret was ${this.secret}.`;
+            } else {
+              this.msg = this.guess < this.secret ? `📈 Go Higher! (${this.lives} ❤️ left)` : `📉 Go Lower! (${this.lives} ❤️ left)`;
+            }
+          }
+        },
+        resetGame() {
+          this.secret = Math.floor(Math.random()*100)+1; this.lives = 5; this.tries = 0; this.guess = null; this.msg = ''; this.won = false; this.lost = false;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aesthetic Phonebook — Contact Manager</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { brandBase: '#1b1d2b', cardBg: '#232638' }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { background-color: #1b1d2b; color: #eef2ff; font-family: system-ui, sans-serif; min-height: 100vh; }
+    .glass { background: rgba(35, 38, 56, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glow-input { background: rgba(27, 29, 43, 0.8); border: 1px solid rgba(134, 225, 252, 0.2); transition: all 0.2s; color: #fff; }
+    .glow-input:focus { border-color: #86e1fc; outline: none; box-shadow: 0 0 15px rgba(134, 225, 252, 0.25); }
+    .btn-purple { background: linear-gradient(135deg, #86e1fc 0%, #cba6f7 100%); transition: all 0.3s; color: #10131e; font-weight: 700; }
+    .btn-purple:hover { box-shadow: 0 0 20px rgba(203, 166, 247, 0.4); transform: translateY(-1px); }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="phoneApp()">
+
+  <!-- Ambient Glow -->
+  <div class="fixed top-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-purple-600/10 blur-[130px] pointer-events-none"></div>
+  <div class="fixed bottom-[-10%] right-[10%] w-[500px] h-[500px] rounded-full bg-blue-600/10 blur-[130px] pointer-events-none"></div>
+
+  <div class="relative z-10 w-full max-w-5xl mx-auto glass rounded-3xl p-6 sm:p-8 shadow-2xl">
+    
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-white/10 pb-6 mb-8 gap-4">
+      <div>
+        <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent flex items-center gap-3">
+          <span>📞</span> AESTHETIC PHONEBOOK
+        </h1>
+        <p class="text-slate-400 text-sm mt-1">Smart, elegant contact management dashboard</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-mono px-3 py-1.5 rounded-full border border-purple-500/30 text-purple-300 bg-purple-500/10" x-text="contacts.length + ' SAVED CONTACTS'">
+        </span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- Left Column: Search & Contact List -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- Search Input -->
+        <div>
+          <input type="text" x-model="searchQuery" placeholder="Search contacts by name, phone or email..." class="glow-input w-full px-4 py-3 rounded-xl text-sm">
+        </div>
+
+        <!-- Contacts Grid / List -->
+        <div class="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+          <template x-if="filteredContacts.length === 0">
+            <div class="bg-slate-900/50 border border-white/5 rounded-2xl p-8 text-center text-slate-400">
+              <p class="font-bold mb-1">Your phone book feels lighter now</p>
+              <p class="text-xs text-slate-500">Add a contact using the panel on the right.</p>
+            </div>
+          </template>
+
+          <template x-for="c in filteredContacts" :key="c.id">
+            <div @click="selectedContact = c" 
+                 class="p-4 rounded-2xl border cursor-pointer transition-all duration-200 flex items-center justify-between"
+                 :class="selectedContact && selectedContact.id === c.id ? 'bg-purple-950/40 border-purple-400 shadow-[0_0_15px_rgba(203,166,247,0.2)]' : 'bg-slate-900/60 border-white/5 hover:border-white/20 hover:bg-slate-900/80'">
+              
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-purple-400 text-slate-950 font-bold flex items-center justify-center text-sm shadow-inner" x-text="c.name.charAt(0).toUpperCase()"></div>
+                <div>
+                  <h3 class="font-bold text-white text-base" x-text="c.name"></h3>
+                  <p class="text-xs font-mono text-cyan-300" x-text="c.phone"></p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <span class="text-xs px-2.5 py-1 rounded-full bg-white/5 text-slate-400" x-text="c.category || 'General'"></span>
+                <button @click.stop="deleteContact(c.id)" class="text-rose-400 hover:text-rose-300 p-1 font-bold text-sm" title="Delete">
+                  ✕
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Add/Edit Form & Contact Details -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <div class="bg-slate-900/80 border border-white/10 rounded-2xl p-6 space-y-4">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider border-b border-white/10 pb-3" x-text="formMode === 'add' ? '➕ Add New Contact' : '✏️ Edit Contact'"></h3>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Full Name</label>
+            <input type="text" x-model="form.name" class="glow-input w-full px-4 py-2.5 rounded-xl text-sm" placeholder="e.g. John Doe">
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Phone Number</label>
+            <input type="text" x-model="form.phone" class="glow-input w-full px-4 py-2.5 rounded-xl text-sm font-mono" placeholder="e.g. +1 555-0199">
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Email Address</label>
+            <input type="email" x-model="form.email" class="glow-input w-full px-4 py-2.5 rounded-xl text-sm" placeholder="e.g. john@example.com">
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Category</label>
+            <select x-model="form.category" class="w-full glow-input rounded-xl px-4 py-2.5 text-sm bg-slate-900">
+              <option value="Personal">Personal</option>
+              <option value="Work">Work</option>
+              <option value="Family">Family</option>
+              <option value="VIP">VIP</option>
+            </select>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button @click="saveContact" class="btn-purple flex-1 py-3 rounded-xl text-sm">
+              <span x-text="formMode === 'add' ? 'Save Contact' : 'Update Contact'"></span>
+            </button>
+            <template x-if="formMode === 'edit'">
+              <button @click="cancelEdit" class="bg-white/10 text-slate-300 hover:bg-white/20 px-4 py-3 rounded-xl text-sm font-bold">
+                Cancel
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <!-- Selected Contact Card Detail -->
+        <template x-if="selectedContact">
+          <div class="bg-purple-950/30 border border-purple-500/20 rounded-2xl p-5 space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <h4 class="font-bold text-lg text-white" x-text="selectedContact.name"></h4>
+                <p class="text-xs text-purple-300 font-mono" x-text="selectedContact.phone"></p>
+              </div>
+              <button @click="editContact(selectedContact)" class="text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 px-3 py-1 rounded-lg font-bold">
+                Edit
+              </button>
+            </div>
+            <div class="text-xs text-slate-400 space-y-1 pt-2 border-t border-white/5">
+              <p>Email: <span class="text-slate-200" x-text="selectedContact.email || 'N/A'"></span></p>
+              <p>Category: <span class="text-purple-300 font-bold" x-text="selectedContact.category || 'General'"></span></p>
+            </div>
+          </div>
+        </template>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    function phoneApp() {
+      return {
+        contacts: [
+          { id: 1, name: "Alice Vance", phone: "+1 555-0142", email: "alice@city17.org", category: "VIP" },
+          { id: 2, name: "Bob Martin", phone: "+1 555-0188", email: "bob@clean-code.com", category: "Work" },
+          { id: 3, name: "Charlie Brown", phone: "+1 555-0199", email: "charlie@peanuts.net", category: "Personal" }
+        ],
+        searchQuery: '',
+        selectedContact: null,
+        formMode: 'add',
+        form: { id: null, name: '', phone: '', email: '', category: 'Personal' },
+
+        get filteredContacts() {
+          const q = this.searchQuery.toLowerCase().trim();
+          if (!q) return this.contacts;
+          return this.contacts.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q) || (c.email && c.email.toLowerCase().includes(q)));
+        },
+
+        saveContact() {
+          if (!this.form.name || !this.form.phone) {
+            alert("Name and Phone number are required!");
+            return;
+          }
+
+          if (this.formMode === 'add') {
+            const newC = {
+              id: Date.now(),
+              name: this.form.name,
+              phone: this.form.phone,
+              email: this.form.email,
+              category: this.form.category
+            };
+            this.contacts.push(newC);
+            this.selectedContact = newC;
+          } else {
+            const idx = this.contacts.findIndex(c => c.id === this.form.id);
+            if (idx !== -1) {
+              this.contacts[idx] = { ...this.form };
+              this.selectedContact = this.contacts[idx];
+            }
+          }
+
+          this.resetForm();
+        },
+
+        editContact(c) {
+          this.formMode = 'edit';
+          this.form = { ...c };
+        },
+
+        cancelEdit() {
+          this.resetForm();
+        },
+
+        deleteContact(id) {
+          if (confirm("Are you sure you want to delete this contact?")) {
+            this.contacts = this.contacts.filter(c => c.id !== id);
+            if (this.selectedContact && this.selectedContact.id === id) {
+              this.selectedContact = null;
+            }
+          }
+        },
+
+        resetForm() {
+          this.formMode = 'add';
+          this.form = { id: null, name: '', phone: '', email: '', category: 'Personal' };
+        }
+      }
+    }
+  </script>
+</body>
+</html>

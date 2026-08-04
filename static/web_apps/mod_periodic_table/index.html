@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Periodic Table</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    body { background-color: #030305; color: #fff; font-family: system-ui, sans-serif; min-height: 100vh; }
+    .glass { background: rgba(14, 14, 22, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .elem-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; transition: all 0.2s; cursor: pointer; }
+    .elem-card:hover { border-color: #38bdf8; background: rgba(56,189,248,0.1); transform: translateY(-2px); }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="periodicApp()">
+  <div class="relative z-10 w-full max-w-4xl mx-auto glass rounded-3xl p-8 shadow-2xl space-y-6">
+    <div class="text-center">
+      <h1 class="text-3xl font-black uppercase tracking-tight bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">
+        ⚗️ Periodic Table Explorer
+      </h1>
+      <p class="text-slate-400 text-xs mt-1">Click elements to inspect atomic properties & electron configuration</p>
+    </div>
+
+    <!-- Elements Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <template x-for="e in elements" :key="e.number">
+        <div class="elem-card" @click="selected = e">
+          <div class="flex justify-between text-xs font-mono text-slate-400 mb-1">
+            <span x-text="e.number"></span>
+            <span class="text-cyan-300 font-bold" x-text="e.mass"></span>
+          </div>
+          <div class="text-2xl font-black text-white text-center font-mono" x-text="e.symbol"></div>
+          <div class="text-xs text-center text-slate-300 font-medium mt-1" x-text="e.name"></div>
+        </div>
+      </template>
+    </div>
+
+    <!-- Inspector Modal / Detail Box -->
+    <template x-if="selected">
+      <div class="bg-cyan-950/40 border border-cyan-500/30 rounded-2xl p-5 flex justify-between items-center">
+        <div>
+          <h2 class="text-xl font-bold text-white" x-text="selected.name + ' (' + selected.symbol + ')'"></h2>
+          <p class="text-xs text-cyan-300 font-mono mt-0.5" x-text="'Atomic Number: ' + selected.number + ' | Category: ' + selected.category"></p>
+        </div>
+        <div class="text-right">
+          <div class="text-lg font-black text-amber-300 font-mono" x-text="selected.mass + ' u'"></div>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <script>
+    function periodicApp() {
+      return {
+        selected: null,
+        elements: [
+          { number: 1, symbol: 'H', name: 'Hydrogen', mass: 1.008, category: 'Nonmetal' },
+          { number: 2, symbol: 'He', name: 'Helium', mass: 4.0026, category: 'Noble Gas' },
+          { number: 3, symbol: 'Li', name: 'Lithium', mass: 6.94, category: 'Alkali Metal' },
+          { number: 4, symbol: 'Be', name: 'Beryllium', mass: 9.0122, category: 'Alkaline Earth' },
+          { number: 6, symbol: 'C', name: 'Carbon', mass: 12.011, category: 'Nonmetal' },
+          { number: 7, symbol: 'N', name: 'Nitrogen', mass: 14.007, category: 'Nonmetal' },
+          { number: 8, symbol: 'O', name: 'Oxygen', mass: 15.999, category: 'Nonmetal' },
+          { number: 10, symbol: 'Ne', name: 'Neon', mass: 20.180, category: 'Noble Gas' }
+        ]
+      }
+    }
+  </script>
+</body>
+</html>

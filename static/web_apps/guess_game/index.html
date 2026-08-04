@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Number Guessing Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    body { background-color: #030305; color: #fff; font-family: system-ui, sans-serif; min-height: 100vh; }
+    .glass { background: rgba(14, 14, 22, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glow-input { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; transition: all 0.2s; }
+    .glow-input:focus { border-color: #a78bfa; outline: none; box-shadow: 0 0 15px rgba(167, 139, 250, 0.25); }
+    .btn-violet { background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 100%); transition: all 0.3s; color: #000; font-weight: 700; }
+    .btn-violet:hover { box-shadow: 0 0 25px rgba(167, 139, 250, 0.4); transform: translateY(-1px); }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="guessGame()">
+  <div class="relative z-10 w-full max-w-lg mx-auto glass rounded-3xl p-8 shadow-2xl text-center">
+    <h1 class="text-3xl font-black mb-2 uppercase tracking-tight bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
+      🔮 Mystery Number
+    </h1>
+    <p class="text-slate-400 text-sm mb-6">Select difficulty & guess the secret number!</p>
+
+    <!-- Difficulty Select -->
+    <template x-if="!playing">
+      <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <button @click="setDiff('easy')" class="p-3 rounded-xl border text-sm font-bold" :class="diff==='easy'?'border-violet-400 bg-violet-500/20 text-violet-300':'border-white/5 text-slate-400'">
+            Easy<br><span class="text-[0.65rem] opacity-70">1-50 (10 tries)</span>
+          </button>
+          <button @click="setDiff('medium')" class="p-3 rounded-xl border text-sm font-bold" :class="diff==='medium'?'border-cyan-400 bg-cyan-500/20 text-cyan-300':'border-white/5 text-slate-400'">
+            Medium<br><span class="text-[0.65rem] opacity-70">1-100 (7 tries)</span>
+          </button>
+          <button @click="setDiff('hard')" class="p-3 rounded-xl border text-sm font-bold" :class="diff==='hard'?'border-rose-400 bg-rose-500/20 text-rose-300':'border-white/5 text-slate-400'">
+            Hard<br><span class="text-[0.65rem] opacity-70">1-200 (5 tries)</span>
+          </button>
+        </div>
+        <button @click="startGame" class="btn-violet w-full py-3.5 rounded-xl mt-4">Start Game</button>
+      </div>
+    </template>
+
+    <!-- Playing Screen -->
+    <template x-if="playing">
+      <div class="space-y-6">
+        <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl text-xs font-mono">
+          <span>Range: <strong class="text-violet-300" x-text="'1-' + maxNum"></strong></span>
+          <span>Attempts Left: <strong class="text-cyan-300" x-text="attemptsLeft"></strong></span>
+        </div>
+
+        <input type="number" x-model.number="currentGuess" @keyup.enter="makeGuess" placeholder="Enter guess..." class="glow-input w-full px-4 py-3 rounded-xl text-center text-xl font-bold font-mono">
+
+        <button @click="makeGuess" class="btn-violet w-full py-3.5 rounded-xl text-base">Submit Guess</button>
+
+        <div x-show="feedback" x-transition class="p-4 rounded-xl text-sm font-bold border" :class="won?'bg-emerald-500/20 border-emerald-500/30 text-emerald-300':lost?'bg-rose-500/20 border-rose-500/30 text-rose-300':'bg-violet-500/20 border-violet-500/30 text-violet-300'" x-text="feedback"></div>
+
+        <template x-if="won || lost">
+          <button @click="playing=false" class="w-full py-3 bg-white/10 rounded-xl font-bold text-sm hover:bg-white/20">Play Again</button>
+        </template>
+      </div>
+    </template>
+  </div>
+
+  <script>
+    function guessGame() {
+      return {
+        diff: 'easy', maxNum: 50, attemptsLeft: 10, secretNum: 0, currentGuess: null, playing: false, feedback: '', won: false, lost: false,
+        setDiff(d) {
+          this.diff = d;
+          if(d==='easy'){this.maxNum=50;this.attemptsLeft=10;}
+          if(d==='medium'){this.maxNum=100;this.attemptsLeft=7;}
+          if(d==='hard'){this.maxNum=200;this.attemptsLeft=5;}
+        },
+        startGame() {
+          this.secretNum = Math.floor(Math.random() * this.maxNum) + 1;
+          this.playing = true; this.won = false; this.lost = false; this.feedback = ''; this.currentGuess = null;
+        },
+        makeGuess() {
+          if (!this.currentGuess || this.won || this.lost) return;
+          this.attemptsLeft--;
+          if (this.currentGuess === this.secretNum) {
+            this.won = true; this.feedback = `🎉 BOOM! Correct! The number was ${this.secretNum}!`;
+          } else if (this.attemptsLeft <= 0) {
+            this.lost = true; this.feedback = `💀 Game Over! The secret number was ${this.secretNum}.`;
+          } else if (this.currentGuess < this.secretNum) {
+            this.feedback = `📈 Higher! (${this.attemptsLeft} tries left)`;
+          } else {
+            this.feedback = `📉 Lower! (${this.attemptsLeft} tries left)`;
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

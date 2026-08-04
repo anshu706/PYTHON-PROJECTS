@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SINTER v4 — A premium, animated hub to browse and launch all your Python projects." />
+  <title>SINTER — Python Projects Hub</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <!-- Vanilla Tilt -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+            display: ['Syne', 'sans-serif'],
+          },
+          colors: {
+            brandBase: '#030305',
+            brandSide: '#060609'
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; -webkit-font-smoothing:antialiased; }
+    body { font-family:'Inter',system-ui,sans-serif; background-color:#030305; color:#f8fafc; min-height:100vh; overflow:hidden; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:99px; }
+    ::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.15); }
+
+    /* Particle Canvas */
+    #particle-canvas { position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:0; opacity:0.3; }
+
+    /* Ambient Orbs */
+    .orb { position:fixed; border-radius:50%; filter:blur(140px); pointer-events:none; mix-blend-mode:screen; z-index:0; }
+    .orb-1 { width:600px; height:600px; background:#a78bfa; top:-200px; left:20%; opacity:0.12; animation:orbFloat 30s ease-in-out infinite alternate; }
+    .orb-2 { width:700px; height:700px; background:#38bdf8; bottom:-300px; right:10%; opacity:0.10; animation:orbFloat 40s ease-in-out infinite alternate-reverse; }
+    @keyframes orbFloat { 0%{transform:translate(0,0) scale(1);} 50%{transform:translate(80px,50px) scale(1.1);} 100%{transform:translate(-40px,-60px) scale(0.9);} }
+
+    /* Glass */
+    .glass { background:rgba(12,12,18,0.5); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.05); }
+
+    /* Sidebar Link */
+    .side-link { display:flex; align-items:center; gap:12px; padding:12px 18px; border-radius:12px; color:#94a3b8; font-weight:500; font-size:0.9rem; transition:all 0.2s ease; cursor:pointer; }
+    .side-link:hover { color:#f8fafc; background:rgba(255,255,255,0.03); }
+    .side-link.active { color:#f8fafc; background:linear-gradient(90deg, rgba(167,139,250,0.1), transparent); border-left:2px solid #a78bfa; }
+
+    /* Glowing Borders (Card) */
+    .project-card { 
+      background:rgba(14,14,22,0.4); 
+      border:1px solid rgba(255,255,255,0.04); 
+      transform-style: preserve-3d;
+      transition: border-color 0.4s ease;
+    }
+    .project-card:hover {
+      border-color: rgba(167,139,250,0.3);
+      box-shadow: 0 0 40px rgba(167,139,250,0.1), inset 0 0 20px rgba(56,189,248,0.05);
+    }
+    
+    /* Z-translate for 3D */
+    .card-content-3d { transform: translateZ(30px); }
+
+    /* Skeleton */
+    .skeleton { background:linear-gradient(90deg,rgba(255,255,255,0.02) 0%,rgba(255,255,255,0.05) 50%,rgba(255,255,255,0.02) 100%); background-size:800px 100%; animation:shimmer 2s ease-in-out infinite; }
+    @keyframes shimmer { 0%{background-position:-400px 0;} 100%{background-position:400px 0;} }
+
+    /* Tags */
+    .tag { font-family:'JetBrains Mono',monospace; font-size:0.6rem; font-weight:600; padding:4px 8px; border-radius:6px; text-transform:uppercase; }
+    .tag-tkinter { color:#f87171; background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.15); }
+    .tag-pygame  { color:#34d399; background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.15); }
+    .tag-web     { color:#38bdf8; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.15); }
+    .tag-opengl  { color:#fbbf24; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.15); }
+
+    /* Search */
+    .search-bar { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:10px 40px; color:#f8fafc; font-size:0.9rem; outline:none; width:300px; transition:all 0.3s; }
+    .search-bar:focus { background:rgba(255,255,255,0.04); border-color:#a78bfa; box-shadow:0 0 0 2px rgba(167,139,250,0.15); width:350px; }
+
+    /* Toast */
+    .toast-wrap { position:fixed; bottom:2rem; right:2rem; z-index:9999; display:flex; flex-direction:column; gap:0.75rem; pointer-events:none; }
+    .toast { display:flex; align-items:center; gap:12px; padding:14px 18px; background:rgba(12,12,18,0.95); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,0.08); border-radius:12px; box-shadow:0 12px 36px rgba(0,0,0,0.35); pointer-events:auto; animation:toastIn 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+    .toast.out { opacity:0; transform:translateX(100%); transition:all 0.3s; }
+    @keyframes toastIn { from{transform:translateX(100%);opacity:0;} to{transform:translateX(0);opacity:1;} }
+
+    /* Modals / Overlays */
+    .palette-overlay { position:fixed; inset:0; z-index:9500; background:rgba(3,3,5,0.8); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); display:flex; justify-content:center; padding-top:12vh; animation:fadeIn 0.2s; }
+    .palette-box { width:100%; max-width:600px; background:rgba(12,12,18,0.8); border:1px solid rgba(167,139,250,0.2); border-radius:16px; box-shadow:0 0 60px rgba(167,139,250,0.1); overflow:hidden; }
+    .palette-input { width:100%; padding:20px 24px 20px 56px; background:transparent; border:none; outline:none; font-size:1.1rem; color:#f8fafc; }
+    
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+  </style>
+</head>
+<body>
+
+  <!-- Backgrounds -->
+  <canvas id="particle-canvas"></canvas>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- App Wrapper -->
+  <div x-data="SINTERApp()" x-init="init()" class="relative z-10 flex h-screen w-full" @keydown.window.escape="closeAll()" @keydown.window.prevent.meta.k="showPalette=true" @keydown.window.prevent.ctrl.k="showPalette=true">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 fixed inset-y-0 left-0 bg-brandSide/60 backdrop-blur-3xl border-r border-white/[0.04] flex flex-col justify-between py-8 z-50">
+      
+      <!-- Top / Logo -->
+      <div class="px-6">
+        <a href="#" class="flex items-center gap-3 mb-10 group no-underline" @click.prevent="setFilter('all')">
+          <svg viewBox="0 0 28 28" fill="none" class="w-8 h-8">
+            <path d="M14 2C7.37 2 2 7.37 2 14s5.37 12 12 12 12-5.37 12-12S20.63 2 14 2z" fill="url(#logoGrad)"/>
+            <path d="M9 12c0-1.1.9-2 2-2h6c1.1 0 2 .9 2 2v1c0 1.1-.9 2-2 2H11c-1.1 0-2-.9-2-2v-1z" fill="white" fill-opacity="0.9"/>
+            <path d="M9 16.5c0-1.1.9-2 2-2h6c1.1 0 2 .9 2 2v.5c0 1.1-.9 2-2 2H11c-1.1 0-2-.9-2-2v-.5z" fill="white" fill-opacity="0.45"/>
+            <defs><linearGradient id="logoGrad" x1="2" y1="2" x2="26" y2="26" gradientUnits="userSpaceOnUse"><stop stop-color="#a78bfa"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs>
+          </svg>
+          <span class="font-display font-bold tracking-tight text-xl text-white group-hover:text-violet-300 transition-colors">SINTER</span>
+          <span class="font-mono text-[0.55rem] uppercase tracking-widest text-slate-500 bg-white/[0.05] border border-white/[0.05] px-1.5 py-0.5 rounded">v4</span>
+        </a>
+
+        <!-- Menu -->
+        <div class="text-xs font-mono uppercase tracking-widest text-slate-500 mb-3 px-2">Library</div>
+        <nav class="flex flex-col gap-1">
+          <div class="side-link" :class="activeFilter==='all'?'active':''" @click="setFilter('all')">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+            <span>All Projects</span>
+            <span class="ml-auto font-mono text-[0.65rem] text-slate-500" x-text="allProjects.length"></span>
+          </div>
+          <div class="side-link" :class="activeFilter==='games'?'active':''" @click="setFilter('games')">
+            <i data-lucide="gamepad-2" class="w-4 h-4 text-rose-400"></i>
+            <span>Games</span>
+            <span class="ml-auto font-mono text-[0.65rem] text-slate-500" x-text="counts.games"></span>
+          </div>
+          <div class="side-link" :class="activeFilter==='utilities'?'active':''" @click="setFilter('utilities')">
+            <i data-lucide="wrench" class="w-4 h-4 text-cyan-400"></i>
+            <span>Utilities</span>
+            <span class="ml-auto font-mono text-[0.65rem] text-slate-500" x-text="counts.utilities"></span>
+          </div>
+          <div class="side-link" :class="activeFilter==='advanced'?'active':''" @click="setFilter('advanced')">
+            <i data-lucide="flask-conical" class="w-4 h-4 text-violet-400"></i>
+            <span>Advanced</span>
+            <span class="ml-auto font-mono text-[0.65rem] text-slate-500" x-text="counts.advanced"></span>
+          </div>
+        </nav>
+      </div>
+
+      <!-- Bottom Status -->
+      <div class="px-6">
+        <div class="bg-white/[0.02] border border-white/[0.04] rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-2 h-2 rounded-full" :class="offline?'bg-rose-500 shadow-[0_0_8px_#f43f5e]':'bg-emerald-500 shadow-[0_0_8px_#10b981]'"></div>
+            <span class="font-mono text-xs text-slate-400" x-text="offline?'Demo Mode':'System Online'"></span>
+          </div>
+          <p class="text-[0.65rem] text-slate-500">Python Environment OK</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="ml-64 flex-1 h-screen overflow-y-auto relative scroll-smooth">
+      
+      <!-- Top Header -->
+      <header class="sticky top-0 z-40 bg-brandBase/80 backdrop-blur-xl border-b border-white/[0.03] px-10 py-5 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <h1 class="font-display text-2xl font-bold uppercase tracking-tight text-white flex items-center gap-3">
+            <span x-text="activeFilter==='all' ? 'All Projects' : activeFilter"></span>
+            <span class="bg-white/[0.05] border border-white/[0.05] text-slate-400 text-xs px-2 py-0.5 rounded-md font-mono" x-text="filteredProjects.length"></span>
+          </h1>
+        </div>
+        
+        <div class="flex items-center gap-4">
+          <!-- Search -->
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+            <input type="text" class="search-bar" placeholder="Filter current view..." x-model="searchQuery" @input="renderFiltered()">
+          </div>
+          <!-- Command Palette Button -->
+          <button @click="showPalette=true" class="bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.05] p-2.5 rounded-xl transition-colors text-slate-400 hover:text-white" title="Cmd+K">
+            <i data-lucide="terminal" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Projects Grid -->
+      <div class="p-10">
+        
+        <!-- Skeletons -->
+        <template x-if="loading">
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <template x-for="i in 9">
+              <div class="project-card rounded-2xl p-6 min-h-[220px]">
+                <div class="skeleton w-12 h-12 rounded-xl mb-4"></div>
+                <div class="skeleton w-3/4 h-5 rounded mb-2"></div>
+                <div class="skeleton w-full h-4 rounded mb-1"></div>
+                <div class="skeleton w-2/3 h-4 rounded"></div>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- Empty State -->
+        <template x-if="!loading && filteredProjects.length === 0">
+          <div class="flex flex-col items-center justify-center py-32 text-slate-500">
+            <i data-lucide="ghost" class="w-12 h-12 mb-4 opacity-50"></i>
+            <p>No projects found matching your criteria.</p>
+          </div>
+        </template>
+
+        <!-- Actual Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
+          <template x-for="project in filteredProjects" :key="project.path">
+            
+            <div class="project-card rounded-2xl p-7 flex flex-col justify-between min-h-[240px] cursor-pointer" data-tilt data-tilt-max="5" data-tilt-speed="400" data-tilt-glare="true" data-tilt-max-glare="0.15" @click="launch(project)">
+              
+              <div class="card-content-3d flex-1">
+                <div class="flex items-start justify-between mb-4">
+                  <div class="w-12 h-12 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-2xl shadow-inner shadow-white/[0.02]">
+                    <span x-text="project.icon"></span>
+                  </div>
+                  <div class="flex gap-1.5 flex-wrap justify-end max-w-[150px]">
+                    <template x-for="tag in project.tags" :key="tag">
+                      <span class="tag" :class="'tag-' + tag.toLowerCase()" x-text="tag"></span>
+                    </template>
+                  </div>
+                </div>
+                
+                <h3 class="text-xl font-semibold text-white tracking-tight mb-2" x-text="project.title"></h3>
+                <p class="text-[0.85rem] text-slate-400 leading-relaxed" x-text="project.desc"></p>
+              </div>
+
+              <!-- Action Bar inside Card -->
+              <div class="card-content-3d mt-6 pt-4 border-t border-white/[0.04] flex items-center justify-between text-slate-500 hover:text-white transition-colors">
+                <span class="text-xs font-mono uppercase tracking-widest flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full" :class="project.category==='games'?'bg-rose-500':project.category==='utilities'?'bg-cyan-500':'bg-violet-500'"></span>
+                  <span x-text="project.catLabel"></span>
+                </span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </div>
+
+            </div>
+          </template>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- COMMAND PALETTE -->
+    <div class="palette-overlay" x-show="showPalette" x-cloak @click.self="showPalette=false">
+      <div class="palette-box" @click.stop>
+        <div class="flex items-center border-b border-white/[0.05] relative bg-brandBase/50">
+          <i data-lucide="terminal" class="w-5 h-5 text-violet-400 absolute left-6 pointer-events-none"></i>
+          <input type="text" class="palette-input" placeholder="Enter command or search projects..." x-ref="paletteInput" x-model="paletteQuery"
+            @keydown.arrow-down.prevent="paletteIndex=Math.min(paletteIndex+1,paletteResults.length-1)"
+            @keydown.arrow-up.prevent="paletteIndex=Math.max(paletteIndex-1,0)"
+            @keydown.enter="launchFromPalette()"
+          />
+          <kbd class="absolute right-6 font-mono text-[0.6rem] text-slate-500 bg-white/[0.05] px-2 py-1 rounded">ESC</kbd>
+        </div>
+        <div class="max-h-[400px] overflow-y-auto py-2 bg-brandSide/90 backdrop-blur-xl">
+          <template x-if="paletteResults.length===0">
+            <div class="px-6 py-8 text-slate-500 text-sm font-mono flex items-center gap-3">
+              <i data-lucide="x-circle" class="w-4 h-4 text-rose-500"></i> No matches found
+            </div>
+          </template>
+          <template x-for="(p,i) in paletteResults" :key="p.path">
+            <div class="flex items-center gap-4 px-6 py-3 cursor-pointer transition-colors" :class="paletteIndex===i ? 'bg-violet-500/10 border-l-2 border-violet-500' : 'border-l-2 border-transparent hover:bg-white/[0.02]'" @click="launch(p);showPalette=false" @mouseenter="paletteIndex=i">
+              <span class="text-xl w-6 text-center" x-text="p.icon"></span>
+              <span class="text-sm font-semibold text-white flex-1" x-text="p.title"></span>
+              <span class="tag" :class="p.tags[0]?'tag-'+p.tags[0].toLowerCase():''" x-text="p.tags[0]||''"></span>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST STACK -->
+    <div class="toast-wrap" id="toast-stack"></div>
+
+  </div> <!-- /Alpine Root -->
+
+  <script>
+  /* =================================================================
+     SINTER v4 — Alpine.js App Logic
+     ================================================================= */
+  const API_BASE = ''; 
+
+  function SINTERApp() {
+    return {
+      allProjects: [],
+      filteredProjects: [],
+      loading: true,
+      offline: false,
+      activeFilter: 'all',
+      searchQuery: '',
+      showPalette: false,
+      paletteQuery: '',
+      paletteIndex: 0,
+      counts: { games:0, utilities:0, advanced:0 },
+
+      get paletteResults() {
+        const q = this.paletteQuery.trim().toLowerCase();
+        if (!q) return this.allProjects.slice(0, 8);
+        return this.allProjects.filter(p => p.title.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.tags.some(t => t.toLowerCase().includes(q))).slice(0, 8);
+      },
+
+      init() {
+        this.fetchProjects();
+        this.$watch('showPalette', val => { if(val) { this.paletteQuery = ''; this.paletteIndex = 0; this.$nextTick(() => this.$refs.paletteInput?.focus()); } });
+        const refreshEffects = () => this.$nextTick(() => {
+          lucide && lucide.createIcons();
+          if (typeof VanillaTilt !== 'undefined') VanillaTilt.init(document.querySelectorAll("[data-tilt]"));
+        });
+        this.$watch('filteredProjects', refreshEffects);
+        this.$watch('loading', refreshEffects);
+        this.$watch('showPalette', refreshEffects);
+      },
+
+      async fetchProjects() {
+        try {
+          const res = await fetch(API_BASE + '/api/projects');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          this.allProjects = await res.json();
+          this.offline = false;
+        } catch (e) {
+          console.warn('[SINTER] Offline, using mock data.');
+          this.offline = true;
+          this.allProjects = MOCK_PROJECTS;
+          this.$nextTick(() => this.toast('Demo Mode', 'Start Flask for real launch capabilities.', 'info'));
+        } finally {
+          this.buildStats();
+          this.renderFiltered();
+          this.loading = false;
+        }
+      },
+
+      buildStats() {
+        const c = { games:0, utilities:0, advanced:0 };
+        this.allProjects.forEach(p => { if (c[p.category] !== undefined) c[p.category]++; });
+        this.counts = c;
+      },
+
+      setFilter(cat) { this.activeFilter = cat; this.renderFiltered(); },
+      
+      renderFiltered() {
+        const q = this.searchQuery.trim().toLowerCase();
+        this.filteredProjects = this.allProjects.filter(p => {
+          const matchCat = this.activeFilter === 'all' || p.category === this.activeFilter;
+          const matchQ   = !q || p.title.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.tags.some(t => t.toLowerCase().includes(q));
+          return matchCat && matchQ;
+        });
+      },
+
+      closeAll() { this.showPalette = false; },
+      
+      launchFromPalette() {
+        const p = this.paletteResults[this.paletteIndex];
+        if (p) { this.launch(p); this.showPalette = false; }
+      },
+
+      async launch(project) {
+        if (!project) return;
+        if (project.type === 'web') {
+          window.open(project.web_url, '_blank');
+          return;
+        }
+        
+        try {
+          const res = await fetch(API_BASE + '/api/launch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: project.path }),
+          });
+          const data = await res.json();
+          if (data.status === 'ok') {
+            this.toast('Launched!', `"${project.title}" is now running.`, 'success');
+          } else {
+            this.toast('Launch Failed', data.message || 'Error', 'error');
+          }
+        } catch (e) {
+          this.toast('Network Error', 'Backend offline.', 'error');
+        }
+      },
+
+      toast(title, message, type='success') {
+        const stack = document.getElementById('toast-stack');
+        if (!stack) return;
+        const colors = { success:'#34d399', error:'#f87171', info:'#38bdf8' };
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerHTML = `
+          <div style="width:4px;height:100%;position:absolute;left:0;top:0;background:${colors[type]};border-radius:12px 0 0 12px"></div>
+          <div style="flex:1;min-width:0;padding-left:8px">
+            <div style="font-size:0.9rem;font-weight:600;color:#fff">${title}</div>
+            <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px">${message}</div>
+          </div>
+        `;
+        const dismiss = () => { el.classList.add('out'); el.addEventListener('transitionend', () => el.remove(), {once:true}); };
+        setTimeout(dismiss, 1500);
+        stack.appendChild(el);
+      },
+    };
+  }
+
+  /* =================================================================
+     MOCK DATA
+     ================================================================= */
+  const MOCK_PROJECTS = [
+    {title:'Casino',filename:'casino.py',path:'games/casino.py',category:'games',catLabel:'Games',icon:'🎰',desc:'Lucky Casino — bet and guess to win 10× your stake.',tags:['web'],type:'web',web_url:'/static/web_apps/casino/index.html'},
+    {title:'Rock Paper Scissors',filename:'rock_paper_scissors.py',path:'games/rock_paper_scissors.py',category:'games',catLabel:'Games',icon:'✊',desc:'Classic Rock-Paper-Scissors with animated GUI.',tags:['web'],type:'web',web_url:'/static/web_apps/rock_paper_scissors/index.html'},
+    {title:'Tic Tac Toe',filename:'tic_tac_toe.py',path:'games/tic_tac_toe.py',category:'games',catLabel:'Games',icon:'❌',desc:'Two-player Tic-Tac-Toe on a 3×3 grid.',tags:['web'],type:'web',web_url:'/static/web_apps/tic_tac_toe/index.html'},
+    {title:'Breakout',filename:'breakout.py',path:'games/breakout.py',category:'games',catLabel:'Games',icon:'🧱',desc:'Breakout arcade game — smash bricks with a bouncing ball.',tags:['web'],type:'web',web_url:'/static/web_apps/breakout/index.html'},
+    {title:'ATM',filename:'atm.py',path:'utilities/atm.py',category:'utilities',catLabel:'Utilities',icon:'🏧',desc:'ATM simulator with deposits, withdrawals, and PIN auth.',tags:['web'],type:'web',web_url:'/static/web_apps/atm/index.html'},
+    {title:'Clock',filename:'clock.py',path:'utilities/clock.py',category:'utilities',catLabel:'Utilities',icon:'⏰',desc:'Live digital clock widget for your desktop.',tags:['web'],type:'web',web_url:'/static/web_apps/clock/index.html'},
+    {title:'3D Object Viewer',filename:'3d_object_viewer.py',path:'advanced/3d_object_viewer.py',category:'advanced',catLabel:'Advanced',icon:'🧊',desc:'Rotate and zoom a 3-D wireframe cube with OpenGL.',tags:['web'],type:'web',web_url:'/static/web_apps/3d_object_viewer/index.html'},
+    {title:'Particle Fireworks',filename:'particle_fireworks.py',path:'advanced/particle_fireworks.py',category:'advanced',catLabel:'Advanced',icon:'🎆',desc:'Click to launch colourful particle fireworks.',tags:['web'],type:'web',web_url:'/static/web_apps/particle_fireworks/index.html'}
+  ];
+
+  /* =================================================================
+     PARTICLES 
+     ================================================================= */
+  (() => {
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    class Particle {
+      reset() {
+        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+        this.r = Math.random() * 1.5 + 0.5; this.vx = (Math.random() - 0.5)*0.2; this.vy = (Math.random() - 0.5)*0.2;
+        this.a = Math.random() * 0.5 + 0.1; this.hue = Math.random()>0.5 ? 262 : 195;
+      }
+      update() { this.x += this.vx; this.y += this.vy; if(this.x<0||this.x>canvas.width||this.y<0||this.y>canvas.height) this.reset(); }
+      draw() { ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.fillStyle=`hsla(${this.hue},80%,72%,${this.a})`; ctx.fill(); }
+    }
+    function init() { resize(); particles = Array.from({length:60}, () => { const p = new Particle(); p.reset(); return p; }); }
+    (function loop() { ctx.clearRect(0,0,canvas.width,canvas.height); particles.forEach(p=>{p.update();p.draw();}); requestAnimationFrame(loop); })();
+    window.addEventListener('resize', resize);
+    init();
+  })();
+
+  document.addEventListener('DOMContentLoaded', () => { if(lucide) lucide.createIcons(); });
+  </script>
+</body>
+</html>

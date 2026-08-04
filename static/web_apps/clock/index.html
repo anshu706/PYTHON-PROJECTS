@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpaceClock — Premium Dashboard</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Ambient visual particles background -->
+  <div class="glow-sphere sphere-1"></div>
+  <div class="glow-sphere sphere-2"></div>
+  <div class="grid-layer"></div>
+
+  <main class="wrapper">
+    <div class="panel">
+      
+      <!-- Top header with control bar -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="pulse-indicator"></span>
+          <span class="header-title">CHRONOS_SYS</span>
+        </div>
+        <div class="header-right">
+          <!-- Theme Switcher -->
+          <div class="theme-picker">
+            <button class="theme-btn active" data-theme="cyan" style="--c:#38bdf8" title="Cyan theme"></button>
+            <button class="theme-btn" data-theme="violet" style="--c:#a78bfa" title="Violet theme"></button>
+            <button class="theme-btn" data-theme="sunset" style="--c:#f43f5e" title="Sunset theme"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab controller -->
+      <div class="tab-header">
+        <button class="tab-btn active" data-tab="clock">Clock</button>
+        <button class="tab-btn" data-tab="timer">Stopwatch</button>
+      </div>
+
+      <!-- Main screen panels -->
+      <div class="tab-content">
+        
+        <!-- Tab 1: Live clock -->
+        <div class="tab-pane active" id="pane-clock">
+          <div class="clock-display">
+            <div class="time-main">
+              <span id="time">00:00:00</span>
+              <span id="ampm">AM</span>
+            </div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-item">
+              <span class="meta-label">Calendar</span>
+              <span class="meta-val" id="date">Loading Date...</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Timezone</span>
+              <span class="meta-val" id="timezone">GMT+00:00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Stopwatch -->
+        <div class="tab-pane" id="pane-timer">
+          <div class="stopwatch-display">
+            <span id="stopwatch-time">00:00.00</span>
+          </div>
+          <div class="timer-controls">
+            <button class="control-btn" id="sw-start">Start</button>
+            <button class="control-btn secondary" id="sw-lap" disabled>Lap</button>
+            <button class="control-btn danger" id="sw-reset">Reset</button>
+          </div>
+          <div class="laps-container" id="laps-list">
+            <!-- Lap entries appear here -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Decorative terminal-like status footer -->
+      <div class="panel-footer">
+        <span class="footer-code">LOC_ADDR: 127.0.0.1</span>
+        <span class="footer-code" id="simulated-ping">PING: 12ms</span>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

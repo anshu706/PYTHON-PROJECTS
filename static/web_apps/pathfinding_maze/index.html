@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A* Pathfinding Maze Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    body { background-color: #030305; color: #fff; font-family: system-ui, sans-serif; min-height: 100vh; user-select: none; }
+    .glass { background: rgba(14, 14, 22, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .p-cell { width: 22px; height: 22px; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 4px; transition: background 0.1s; }
+    .p-start { background-color: #34d399 !important; }
+    .p-end { background-color: #f43f5e !important; }
+    .p-wall { background-color: #475569 !important; }
+    .p-visited { background-color: #38bdf8 !important; }
+    .p-path { background-color: #fbbf24 !important; }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="pathApp()">
+  <div class="relative z-10 glass rounded-3xl p-6 shadow-2xl text-center space-y-4">
+    <div class="flex justify-between items-center border-b border-white/10 pb-4">
+      <h1 class="text-2xl font-black uppercase tracking-tight bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+        🗺️ A* Pathfinder Visualizer
+      </h1>
+      <div class="flex gap-2">
+        <button @click="visualize" :disabled="running" class="px-4 py-2 bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 font-bold rounded-xl text-xs disabled:opacity-40">
+          Start A* Search
+        </button>
+        <button @click="resetGrid" :disabled="running" class="px-4 py-2 bg-white/10 text-slate-300 font-bold rounded-xl text-xs hover:bg-white/20">
+          Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid -->
+    <div class="grid grid-cols-15 gap-1 justify-center max-w-fit mx-auto p-2 bg-black/40 rounded-xl border border-white/10" style="grid-template-columns: repeat(15, minmax(0, 1fr));">
+      <template x-for="(row, r) in grid" :key="r">
+        <template x-for="(cell, c) in row" :key="c">
+          <div class="p-cell cursor-pointer"
+               :class="[
+                 cell.isStart ? 'p-start' : '',
+                 cell.isEnd ? 'p-end' : '',
+                 cell.isWall ? 'p-wall' : '',
+                 cell.isPath ? 'p-path' : (cell.isVisited ? 'p-visited' : '')
+               ]"
+               @click="toggleWall(r, c)">
+          </div>
+        </template>
+      </template>
+    </div>
+
+    <div class="flex gap-4 justify-center text-xs text-slate-400">
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-400"></span> Start</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-rose-500"></span> Target</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-slate-600"></span> Wall (Click cell)</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-amber-400"></span> Shortest Path</span>
+    </div>
+  </div>
+
+  <script>
+    function pathApp() {
+      return {
+        rows: 15, cols: 15, grid: [], running: false,
+        start: { r: 2, c: 2 }, end: { r: 12, c: 12 },
+        init() { this.resetGrid(); },
+        resetGrid() {
+          this.running = false;
+          this.grid = Array.from({length: this.rows}, (_, r) => 
+            Array.from({length: this.cols}, (_, c) => ({
+              r, c, isStart: r === this.start.r && c === this.start.c,
+              isEnd: r === this.end.r && c === this.end.c,
+              isWall: false, isVisited: false, isPath: false, parent: null, g: Infinity, f: Infinity
+            }))
+          );
+        },
+        toggleWall(r, c) {
+          if (this.running || (r===this.start.r&&c===this.start.c) || (r===this.end.r&&c===this.end.c)) return;
+          this.grid[r][c].isWall = !this.grid[r][c].isWall;
+        },
+        async visualize() {
+          this.running = true;
+          let openSet = [this.grid[this.start.r][this.start.c]];
+          this.grid[this.start.r][this.start.c].g = 0;
+          this.grid[this.start.r][this.start.c].f = this.h(this.start.r, this.start.c);
+
+          while (openSet.length > 0) {
+            openSet.sort((a, b) => a.f - b.f);
+            let current = openSet.shift();
+            if (current.r === this.end.r && current.c === this.end.c) {
+              let curr = current;
+              while (curr) { curr.isPath = true; curr = curr.parent; }
+              this.running = false; return;
+            }
+
+            current.isVisited = true;
+            await new Promise(res => setTimeout(res, 20));
+
+            let neighbors = this.getNeighbors(current.r, current.c);
+            for (let neighbor of neighbors) {
+              if (neighbor.isWall || neighbor.isVisited) continue;
+              let tempG = current.g + 1;
+              if (tempG < neighbor.g) {
+                neighbor.parent = current;
+                neighbor.g = tempG;
+                neighbor.f = neighbor.g + this.h(neighbor.r, neighbor.c);
+                if (!openSet.includes(neighbor)) openSet.push(neighbor);
+              }
+            }
+          }
+          alert("No path found!"); this.running = false;
+        },
+        h(r, c) { return Math.abs(r - this.end.r) + Math.abs(c - this.end.c); },
+        getNeighbors(r, c) {
+          let res = [];
+          if (r > 0) res.push(this.grid[r-1][c]);
+          if (r < this.rows - 1) res.push(this.grid[r+1][c]);
+          if (c > 0) res.push(this.grid[r][c-1]);
+          if (c < this.cols - 1) res.push(this.grid[r+1][c]);
+          return res;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

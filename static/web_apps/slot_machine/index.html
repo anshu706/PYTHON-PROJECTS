@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vegas Slot Machine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    body { background-color: #030305; color: #fff; font-family: system-ui, sans-serif; min-height: 100vh; }
+    .glass { background: rgba(14, 14, 22, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .reel-box { width: 80px; height: 100px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 3rem; box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5); }
+    .btn-spin { background: linear-gradient(135deg, #f43f5e 0%, #fbbf24 100%); transition: all 0.3s; color: #000; font-weight: 900; }
+    .btn-spin:hover { box-shadow: 0 0 25px rgba(244, 63, 94, 0.5); transform: translateY(-2px); }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="slotApp()">
+  <div class="relative z-10 w-full max-w-md mx-auto glass rounded-3xl p-8 shadow-2xl text-center space-y-6">
+    <h1 class="text-3xl font-black uppercase tracking-tight bg-gradient-to-r from-rose-400 to-amber-400 bg-clip-text text-transparent">
+      🍒 Vegas Slots
+    </h1>
+
+    <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl font-mono text-sm">
+      <span>Balance: <strong class="text-emerald-400" x-text="'$' + balance"></strong></span>
+      <span>Bet: <strong class="text-amber-300" x-text="'$' + bet"></strong></span>
+    </div>
+
+    <!-- Reels -->
+    <div class="flex justify-center gap-4 py-4">
+      <template x-for="(symbol, idx) in reels" :key="idx">
+        <div class="reel-box" x-text="symbol"></div>
+      </template>
+    </div>
+
+    <button @click="spin" :disabled="spinning || balance < bet" class="btn-spin w-full py-4 rounded-2xl text-lg uppercase tracking-widest disabled:opacity-40">
+      <span x-text="spinning ? 'Spinning...' : 'SPIN REELS'"></span>
+    </button>
+
+    <div x-show="message" x-transition class="p-4 rounded-xl text-sm font-bold border" :class="won?'bg-emerald-500/20 border-emerald-500/30 text-emerald-300':'bg-rose-500/20 border-rose-500/30 text-rose-300'" x-text="message"></div>
+  </div>
+
+  <script>
+    function slotApp() {
+      return {
+        symbols: ['🍒', '🍋', '🔔', '💎', '7️⃣'],
+        reels: ['🍒', '🔔', '7️⃣'],
+        balance: 100, bet: 10, spinning: false, message: '', won: false,
+        spin() {
+          if (this.balance < this.bet || this.spinning) return;
+          this.balance -= this.bet; this.spinning = true; this.message = '';
+          let count = 0;
+          let interval = setInterval(() => {
+            this.reels = this.reels.map(() => this.symbols[Math.floor(Math.random() * this.symbols.length)]);
+            count++;
+            if (count > 15) {
+              clearInterval(interval);
+              this.spinning = false;
+              this.evalWin();
+            }
+          }, 80);
+        },
+        evalWin() {
+          const [r1, r2, r3] = this.reels;
+          if (r1 === r2 && r2 === r3) {
+            const payout = this.bet * 10;
+            this.balance += payout; this.won = true;
+            this.message = `🎉 JACKPOT! 3x ${r1}! Won $${payout}!`;
+          } else if (r1 === r2 || r2 === r3 || r1 === r3) {
+            const payout = this.bet * 2;
+            this.balance += payout; this.won = true;
+            this.message = `🌟 Match 2! Won $${payout}!`;
+          } else {
+            this.won = false;
+            this.message = `😢 No match! Try again!`;
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

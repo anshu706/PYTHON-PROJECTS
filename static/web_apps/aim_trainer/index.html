@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aim Trainer Reflex Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    body { background-color: #030305; color: #fff; font-family: system-ui, sans-serif; min-height: 100vh; user-select: none; }
+    .glass { background: rgba(14, 14, 22, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    #target-area { position: relative; width: 100%; height: 350px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1rem; overflow: hidden; cursor: crosshair; }
+    .target-circle { position: absolute; border-radius: 50%; background: radial-gradient(circle, #f43f5e 30%, #38bdf8 100%); box-shadow: 0 0 15px rgba(244, 63, 94, 0.6); transform: translate(-50%, -50%); transition: transform 0.1s; }
+    .target-circle:active { transform: translate(-50%, -50%) scale(0.9); }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="aimApp()">
+  <div class="relative z-10 w-full max-w-2xl mx-auto glass rounded-3xl p-8 shadow-2xl text-center">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-black uppercase tracking-tight bg-gradient-to-r from-rose-400 to-cyan-400 bg-clip-text text-transparent">
+        🎯 Reflex Aim Trainer
+      </h1>
+      <div class="flex gap-4 text-xs font-mono">
+        <div>Time: <span class="text-rose-400 font-bold" x-text="timeLeft + 's'"></span></div>
+        <div>Score: <span class="text-emerald-400 font-bold" x-text="score"></span></div>
+        <div>Accuracy: <span class="text-cyan-400 font-bold" x-text="accuracy + '%'"></span></div>
+      </div>
+    </div>
+
+    <div id="target-area" @click="missClick">
+      <template x-if="!playing && !ended">
+        <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80">
+          <p class="text-slate-300 text-sm mb-4">Click as many targets as you can in 20 seconds!</p>
+          <button @click.stop="startGame" class="px-6 py-3 bg-gradient-to-r from-rose-500 to-cyan-500 text-slate-950 font-bold rounded-xl text-sm">
+            Start Trainer
+          </button>
+        </div>
+      </template>
+
+      <template x-if="ended">
+        <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 space-y-3">
+          <h2 class="text-2xl font-bold text-white">Time's Up!</h2>
+          <div class="text-sm text-slate-300 font-mono">Hits: <strong class="text-rose-400" x-text="score"></strong> | Accuracy: <strong class="text-cyan-400" x-text="accuracy + '%'"></strong></div>
+          <button @click.stop="startGame" class="px-6 py-3 bg-gradient-to-r from-rose-500 to-cyan-500 text-slate-950 font-bold rounded-xl text-sm mt-2">
+            Try Again
+          </button>
+        </div>
+      </template>
+
+      <template x-if="playing && target">
+        <div class="target-circle" 
+             :style="`left: ${target.x}px; top: ${target.y}px; width: ${target.size}px; height: ${target.size}px;`"
+             @click.stop="hitTarget">
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <script>
+    function aimApp() {
+      return {
+        playing: false, ended: false, score: 0, totalClicks: 0, timeLeft: 20, timer: null, target: null,
+        get accuracy() { return this.totalClicks > 0 ? Math.round((this.score / this.totalClicks) * 100) : 100; },
+        startGame() {
+          this.score = 0; this.totalClicks = 0; this.timeLeft = 20; this.playing = true; this.ended = false;
+          this.spawnTarget();
+          clearInterval(this.timer);
+          this.timer = setInterval(() => {
+            this.timeLeft--;
+            if (this.timeLeft <= 0) {
+              clearInterval(this.timer);
+              this.playing = false; this.ended = true;
+            }
+          }, 1000);
+        },
+        spawnTarget() {
+          const area = document.getElementById('target-area');
+          if (!area) return;
+          const pad = 40;
+          this.target = {
+            x: Math.random() * (area.clientWidth - pad * 2) + pad,
+            y: Math.random() * (area.clientHeight - pad * 2) + pad,
+            size: Math.random() * 20 + 35
+          };
+        },
+        hitTarget() {
+          if (!this.playing) return;
+          this.score++; this.totalClicks++;
+          this.spawnTarget();
+        },
+        missClick() {
+          if (!this.playing) return;
+          this.totalClicks++;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

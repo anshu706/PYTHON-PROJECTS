@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trivia Quiz Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    body { background-color: #030305; color: #fff; font-family: system-ui, sans-serif; min-height: 100vh; }
+    .glass { background: rgba(14, 14, 22, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .btn-quiz { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s; }
+    .btn-quiz:hover { background: rgba(167, 139, 250, 0.15); border-color: #a78bfa; transform: translateY(-1px); }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="quizApp()">
+  <div class="relative z-10 w-full max-w-xl mx-auto glass rounded-3xl p-8 shadow-2xl">
+    <div class="text-center mb-6">
+      <h1 class="text-3xl font-black uppercase tracking-tight bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
+        🧠 Trivia Master Quiz
+      </h1>
+      <p class="text-slate-400 text-xs mt-1">Test your knowledge across Python, Science & Tech</p>
+    </div>
+
+    <template x-if="!finished">
+      <div class="space-y-6">
+        <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl text-xs font-mono">
+          <span>Question <strong class="text-violet-300" x-text="(currIdx + 1) + '/' + questions.length"></strong></span>
+          <span>Score: <strong class="text-emerald-400" x-text="score"></strong></span>
+        </div>
+
+        <div class="bg-slate-900/80 p-5 rounded-2xl border border-white/10">
+          <h2 class="text-base font-bold text-white mb-4" x-text="currQ.question"></h2>
+          <div class="grid grid-cols-1 gap-3">
+            <template x-for="(opt, idx) in currQ.options" :key="idx">
+              <button @click="selectAnswer(idx)" class="btn-quiz p-4 rounded-xl text-left text-sm font-medium flex items-center justify-between text-slate-200">
+                <span x-text="opt"></span>
+                <span class="text-xs font-mono opacity-40" x-text="'[' + (idx+1) + ']'"></span>
+              </button>
+            </template>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template x-if="finished">
+      <div class="text-center space-y-6">
+        <div class="bg-gradient-to-br from-violet-950/60 to-pink-950/60 border border-violet-500/30 p-6 rounded-2xl">
+          <h2 class="text-2xl font-bold text-white mb-2">Quiz Completed!</h2>
+          <div class="text-4xl font-black text-violet-400 font-mono my-3" x-text="score + ' / ' + questions.length"></div>
+          <p class="text-xs text-slate-400" x-text="score === questions.length ? '🏆 PERFECT SCORE!' : score >= 2 ? 'Great job!' : 'Keep practicing!'"></p>
+        </div>
+        <button @click="resetQuiz" class="w-full py-3.5 bg-gradient-to-r from-violet-400 to-pink-400 text-slate-950 font-bold rounded-xl text-sm">
+          Play Again
+        </button>
+      </div>
+    </template>
+  </div>
+
+  <script>
+    function quizApp() {
+      return {
+        currIdx: 0, score: 0, finished: false,
+        questions: [
+          { question: "What is the output of len(['python', 'sinter', 2026])?", options: ["2", "3", "4", "Error"], answer: 1 },
+          { question: "Which algorithm is used for finding shortest paths in graphs?", options: ["Dijkstra", "Bubble Sort", "Binary Search", "K-Means"], answer: 0 },
+          { question: "Which HTML tag is used to embed JavaScript?", options: ["<js>", "<script>", "<javascript>", "<code>"], answer: 1 },
+          { question: "What does CSS stand for?", options: ["Computer Style Sheets", "Cascading Style Sheets", "Creative Style System", "Colorful Style Sheet"], answer: 1 }
+        ],
+        get currQ() { return this.questions[this.currIdx]; },
+        selectAnswer(idx) {
+          if (idx === this.currQ.answer) this.score++;
+          if (this.currIdx + 1 < this.questions.length) this.currIdx++;
+          else this.finished = true;
+        },
+        resetQuiz() { this.currIdx = 0; this.score = 0; this.finished = false; }
+      }
+    }
+  </script>
+</body>
+</html>

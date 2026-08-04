@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Python Restaurant — Digital Ordering & Billing</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { brandBase: '#0b0f19', cardBg: '#111827' }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { background-color: #0b0f19; color: #f8fafc; font-family: system-ui, sans-serif; min-height: 100vh; }
+    .glass { background: rgba(17, 24, 39, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glow-input { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s; color: #fff; }
+    .glow-input:focus { border-color: #14b8a6; outline: none; box-shadow: 0 0 15px rgba(20, 184, 166, 0.25); }
+    .btn-teal { background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%); transition: all 0.3s; color: #0f172a; font-weight: 700; }
+    .btn-teal:hover { box-shadow: 0 0 20px rgba(20, 184, 166, 0.4); transform: translateY(-1px); }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="hotelApp()">
+
+  <!-- Ambient Glow -->
+  <div class="fixed top-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-teal-600/10 blur-[130px] pointer-events-none"></div>
+  <div class="fixed bottom-[-10%] right-[10%] w-[500px] h-[500px] rounded-full bg-cyan-600/10 blur-[130px] pointer-events-none"></div>
+
+  <div class="relative z-10 w-full max-w-5xl mx-auto glass rounded-3xl p-6 sm:p-8 shadow-2xl">
+    
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-white/10 pb-6 mb-8 gap-4">
+      <div>
+        <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-teal-400 to-amber-300 bg-clip-text text-transparent flex items-center gap-3">
+          <span>🍽️</span> PYTHON RESTAURANT
+        </h1>
+        <p class="text-slate-400 text-sm mt-1">Fresh picks. Fast billing. Clean vibes.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-mono px-3 py-1.5 rounded-full border border-teal-500/30 text-teal-300 bg-teal-500/10">
+          DIGITAL MENU & BILLING
+        </span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- Left Column: Menu & Order Input -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- Menu Items Grid -->
+        <div>
+          <h2 class="text-lg font-bold text-slate-200 mb-3 flex items-center gap-2">
+            <span>📋</span> Menu Catalog
+          </h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <template x-for="(price, item) in menu" :key="item">
+              <div @click="selectedItem = item" 
+                   class="p-4 rounded-2xl border cursor-pointer transition-all duration-200"
+                   :class="selectedItem === item ? 'bg-teal-950/40 border-teal-400 shadow-[0_0_15px_rgba(20,184,166,0.2)] scale-[1.02]' : 'bg-slate-900/60 border-white/5 hover:border-white/20 hover:bg-slate-900/80'">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-bold text-white text-base" x-text="item"></span>
+                  <span class="text-lg" x-text="itemIcons[item] || '🍕'"></span>
+                </div>
+                <div class="text-sm font-mono text-teal-400 font-bold" x-text="'Rs ' + price"></div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Add Order Form -->
+        <div class="bg-slate-900/70 border border-white/10 rounded-2xl p-5 space-y-4">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider">Place Item Order</h3>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Selected Item</label>
+              <select x-model="selectedItem" class="w-full glow-input rounded-xl px-4 py-2.5 text-sm bg-slate-900">
+                <template x-for="(price, item) in menu" :key="item">
+                  <option :value="item" x-text="item + ' (Rs ' + price + ')'"></option>
+                </template>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Quantity</label>
+              <input type="number" min="1" x-model.number="quantity" class="w-full glow-input rounded-xl px-4 py-2.5 text-sm font-mono text-center">
+            </div>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button @click="addItem" class="btn-teal flex-1 py-3 rounded-xl text-sm tracking-wide">
+              ➕ Add to Order
+            </button>
+            <button @click="removeLast" :disabled="orderItems.length === 0" class="bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 px-5 py-3 rounded-xl text-sm font-bold disabled:opacity-40">
+              ↩ Remove Last
+            </button>
+          </div>
+        </div>
+
+        <!-- Order Items List -->
+        <div class="bg-slate-900/50 border border-white/5 rounded-2xl p-5">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider">Order Summary</h3>
+            <span class="text-xs text-slate-400 font-mono" x-text="orderItems.length + ' items'"></span>
+          </div>
+
+          <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+            <template x-if="orderItems.length === 0">
+              <p class="text-xs text-slate-500 italic py-4 text-center">No items added yet. Select an item above!</p>
+            </template>
+            <template x-for="(item, idx) in orderItems" :key="idx">
+              <div class="flex items-center justify-between bg-white/5 px-4 py-2.5 rounded-xl border border-white/5 text-sm font-mono">
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-300 font-bold" x-text="item.name"></span>
+                  <span class="text-xs text-slate-400" x-text="'x' + item.qty"></span>
+                </div>
+                <span class="text-teal-400 font-bold" x-text="'Rs ' + item.total"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Bill & Receipt Preview -->
+      <div class="lg:col-span-5 flex flex-col justify-between space-y-6">
+        
+        <div class="bg-slate-900/80 border border-white/10 rounded-2xl p-6 space-y-4">
+          <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider border-b border-white/10 pb-3 flex justify-between items-center">
+            <span>🧾 Live Bill Preview</span>
+            <span class="text-xs text-teal-400 font-mono font-bold" x-text="'5% Tax Applied'"></span>
+          </h3>
+
+          <div class="space-y-2 font-mono text-sm">
+            <div class="flex justify-between text-slate-400">
+              <span>Subtotal:</span>
+              <span class="text-white font-bold" x-text="'Rs ' + subtotal.toFixed(2)"></span>
+            </div>
+            <div class="flex justify-between text-slate-400">
+              <span>Tax (5%):</span>
+              <span class="text-amber-400 font-bold" x-text="'Rs ' + tax.toFixed(2)"></span>
+            </div>
+            <div class="flex justify-between text-lg text-white font-bold border-t border-white/10 pt-3">
+              <span class="text-teal-300">Grand Total:</span>
+              <span class="text-teal-400" x-text="'Rs ' + grandTotal.toFixed(2)"></span>
+            </div>
+          </div>
+
+          <!-- Printable Receipt Box -->
+          <div class="bg-slate-950 p-4 rounded-xl border border-white/5 font-mono text-xs text-slate-300 space-y-1.5 overflow-x-auto">
+            <div class="text-center font-bold text-amber-300 border-b border-dashed border-slate-700 pb-2 mb-2">
+              ------ PYTHON RESTAURANT ------
+            </div>
+            <div class="text-[0.65rem] text-slate-400" x-text="'Date: ' + currentDate"></div>
+            <div class="border-b border-dashed border-slate-800 my-2"></div>
+            <template x-for="item in orderItems" :key="item.name">
+              <div class="flex justify-between">
+                <span x-text="item.name + ' x' + item.qty"></span>
+                <span x-text="'Rs ' + item.total"></span>
+              </div>
+            </template>
+            <template x-if="orderItems.length === 0">
+              <div class="text-slate-600 italic text-center py-2">No active order</div>
+            </template>
+            <div class="border-t border-dashed border-slate-700 pt-2 mt-2 font-bold text-teal-300 flex justify-between">
+              <span>TOTAL DUE:</span>
+              <span x-text="'Rs ' + grandTotal.toFixed(2)"></span>
+            </div>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button @click="checkout" :disabled="orderItems.length === 0" class="btn-teal flex-1 py-3.5 rounded-xl font-bold tracking-wide disabled:opacity-40">
+              💳 Checkout
+            </button>
+            <button @click="clearOrder" :disabled="orderItems.length === 0" class="bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30 px-4 py-3.5 rounded-xl font-bold disabled:opacity-40">
+              🗑️ Clear
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    function hotelApp() {
+      return {
+        menu: { "Pizza": 40, "Pasta": 50, "Burger": 60, "Salad": 70, "Coffee": 80 },
+        itemIcons: { "Pizza": "🍕", "Pasta": "🍝", "Burger": "🍔", "Salad": "🥗", "Coffee": "☕" },
+        selectedItem: 'Pizza',
+        quantity: 1,
+        orderItems: [],
+        currentDate: new Date().toLocaleString(),
+
+        get subtotal() {
+          return this.orderItems.reduce((sum, i) => sum + i.total, 0);
+        },
+
+        get tax() {
+          return this.subtotal * 0.05;
+        },
+
+        get grandTotal() {
+          return this.subtotal + this.tax;
+        },
+
+        addItem() {
+          if (this.quantity <= 0) return;
+          const price = this.menu[this.selectedItem];
+          const total = price * this.quantity;
+          
+          this.orderItems.push({
+            name: this.selectedItem,
+            qty: this.quantity,
+            price: price,
+            total: total
+          });
+          this.quantity = 1;
+        },
+
+        removeLast() {
+          this.orderItems.pop();
+        },
+
+        clearOrder() {
+          this.orderItems = [];
+        },
+
+        checkout() {
+          alert(`🎉 Order Confirmed!\nYour final bill is Rs ${this.grandTotal.toFixed(2)}.`);
+          this.clearOrder();
+        }
+      }
+    }
+  </script>
+</body>
+</html>

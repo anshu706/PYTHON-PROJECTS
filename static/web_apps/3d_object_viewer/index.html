@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Object Viewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #030305; color: #fff; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+    .glass { background: rgba(14, 14, 22, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    canvas { background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+  </style>
+</head>
+<body class="p-4">
+  <div class="glass rounded-3xl p-6 shadow-2xl text-center space-y-4 max-w-lg w-full">
+    <h1 class="text-2xl font-black uppercase tracking-tight bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">
+      🧊 3D Wireframe Viewer
+    </h1>
+    <p class="text-xs text-slate-400">Drag mouse to rotate cube in 3D space</p>
+    <canvas id="cubeCanvas" width="400" height="350"></canvas>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("cubeCanvas");
+    const ctx = canvas.getContext("2d");
+    let angleX = 0, angleY = 0, isDragging = false, lastMouseX = 0, lastMouseY = 0;
+
+    const vertices = [
+      [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+      [-1, -1, 1],  [1, -1, 1],  [1, 1, 1],  [-1, 1, 1]
+    ];
+    const edges = [
+      [0,1], [1,2], [2,3], [3,0],
+      [4,5], [5,6], [6,7], [7,4],
+      [0,4], [1,5], [2,6], [3,7]
+    ];
+
+    canvas.addEventListener("mousedown", (e) => { isDragging = true; lastMouseX = e.clientX; lastMouseY = e.clientY; });
+    window.addEventListener("mouseup", () => isDragging = false);
+    window.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      let dx = e.clientX - lastMouseX, dy = e.clientY - lastMouseY;
+      angleY += dx * 0.01; angleX += dy * 0.01;
+      lastMouseX = e.clientX; lastMouseY = e.clientY;
+    });
+
+    function project(vertex) {
+      let [x, y, z] = vertex;
+      // Rotate Y
+      let x1 = x * Math.cos(angleY) + z * Math.sin(angleY);
+      let z1 = -x * Math.sin(angleY) + z * Math.cos(angleY);
+      // Rotate X
+      let y2 = y * Math.cos(angleX) - z1 * Math.sin(angleX);
+      let z2 = y * Math.sin(angleX) + z1 * Math.cos(angleX);
+      // Perspective
+      let distance = 3;
+      let fov = 200;
+      let px = (x1 / (z2 + distance)) * fov + canvas.width / 2;
+      let py = (y2 / (z2 + distance)) * fov + canvas.height / 2;
+      return [px, py];
+    }
+
+    (function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!isDragging) { angleY += 0.005; angleX += 0.003; }
+      const projected = vertices.map(project);
+
+      ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = "#38bdf8";
+      edges.forEach(([u, v]) => {
+        ctx.beginPath();
+        ctx.moveTo(projected[u][0], projected[u][1]);
+        ctx.lineTo(projected[v][0], projected[v][1]);
+        ctx.stroke();
+      });
+
+      projected.forEach(([px, py]) => {
+        ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fillStyle = "#a78bfa"; ctx.fill();
+      });
+
+      requestAnimationFrame(draw);
+    })();
+  </script>
+</body>
+</html>

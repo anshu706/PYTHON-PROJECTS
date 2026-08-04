@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Color Explosion Animation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #030305; color: #fff; margin: 0; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    .overlay { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: none; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="overlay">
+    <h1 class="text-2xl font-black uppercase tracking-tight bg-gradient-to-r from-teal-400 via-rose-400 to-amber-300 bg-clip-text text-transparent">
+      🌈 Color Explosion
+    </h1>
+    <p class="text-xs text-slate-400">Real-time color spectrum gradient particle visualizer</p>
+  </div>
+  <canvas id="colorCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("colorCanvas");
+    const ctx = canvas.getContext("2d");
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener("resize", resize); resize();
+
+    let count = 100;
+    let particles = Array.from({length: count}, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 40 + 10,
+      vx: (Math.random() - 0.5) * 2,
+      vy: (Math.random() - 0.5) * 2,
+      hue: Math.random() * 360
+    }));
+
+    (function loop() {
+      ctx.fillStyle = "rgba(3, 3, 5, 0.1)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        p.hue = (p.hue + 0.5) % 360;
+        if (p.x < 0 || p.x > canvas.width) p.vx = -p.vx;
+        if (p.y < 0 || p.y > canvas.height) p.vy = -p.vy;
+
+        let grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+        grad.addColorStop(0, `hsla(${p.hue}, 100%, 65%, 0.6)`);
+        grad.addColorStop(1, `hsla(${p.hue}, 100%, 65%, 0)`);
+
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      });
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

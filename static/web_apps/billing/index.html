@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anteiku Smart Billing Desk</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { brandBase: '#0b0c10', cardBg: '#151722' }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { background-color: #0b0c10; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
+    .glass { background: rgba(21, 23, 34, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glow-input { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s; color: white; }
+    .glow-input:focus { border-color: #38bdf8; outline: none; box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); }
+    .btn-gradient { background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%); color: #0b0c10; font-weight: 700; transition: all 0.3s; }
+    .btn-gradient:hover { box-shadow: 0 0 20px rgba(56, 189, 248, 0.4); transform: translateY(-1px); }
+  </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen relative" x-data="billingApp()">
+
+  <!-- Ambient background glow -->
+  <div class="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-cyan-600/10 blur-[140px] pointer-events-none"></div>
+  <div class="fixed bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-[140px] pointer-events-none"></div>
+
+  <div class="max-w-6xl mx-auto space-y-6 relative z-10">
+    
+    <!-- Top Header -->
+    <div class="glass rounded-3xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-sky-400 to-indigo-300 bg-clip-text text-transparent flex items-center gap-3">
+          <span>🧾</span> ANTEIKU SMART BILLING DESK
+        </h1>
+        <p class="text-slate-400 text-xs sm:text-sm font-mono mt-1">Boutique Checkout & Itemized Billing Interface</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button @click="generateInvoice" class="btn-gradient px-5 py-2.5 rounded-xl text-sm shadow-lg flex items-center gap-2">
+          <span>⚡</span> Generate Invoice
+        </button>
+        <button @click="clearAll" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors">
+          Clear All
+        </button>
+      </div>
+    </div>
+
+    <!-- Customer Details Card -->
+    <div class="glass rounded-3xl p-6">
+      <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+        <span>👤</span> Customer Details
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Customer Name</label>
+          <input type="text" x-model="customer.name" placeholder="Walk-in Customer" class="w-full glow-input rounded-xl px-4 py-2.5 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Phone Number</label>
+          <input type="text" x-model="customer.phone" placeholder="+1 (555) 000-0000" class="w-full glow-input rounded-xl px-4 py-2.5 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Customer ID</label>
+          <input type="text" x-model="customer.id" placeholder="CUST-1042" class="w-full glow-input rounded-xl px-4 py-2.5 text-sm font-mono" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Products Grid & Invoice Preview -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Products Selection (8 cols) -->
+      <div class="lg:col-span-8 space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          
+          <template x-for="(items, category) in prices" :key="category">
+            <div class="glass rounded-2xl p-4 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between border-b border-white/5 pb-2 mb-3">
+                  <h3 class="font-bold text-sky-400 text-sm tracking-wide" x-text="category"></h3>
+                  <span class="text-[0.65rem] font-mono text-slate-400 px-2 py-0.5 rounded bg-white/5" x-text="'Rs ' + calculateCategoryTotal(category)"></span>
+                </div>
+                <div class="space-y-3">
+                  <template x-for="(price, item) in items" :key="item">
+                    <div class="flex items-center justify-between text-xs">
+                      <div>
+                        <span class="text-slate-200 font-medium block" x-text="item"></span>
+                        <span class="text-slate-400 font-mono text-[0.7rem]" x-text="'Rs ' + price"></span>
+                      </div>
+                      <input type="number" min="0" max="99" 
+                             x-model.number="quantities[category][item]" 
+                             class="w-14 glow-input text-center rounded-lg py-1 font-mono text-xs font-bold" />
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </template>
+
+        </div>
+
+        <!-- Totals Summary Bar -->
+        <div class="glass rounded-2xl p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div>
+            <div class="text-[0.7rem] uppercase font-mono text-slate-400">Cosmetics</div>
+            <div class="text-lg font-bold text-slate-200 font-mono" x-text="'Rs ' + cosmeticsTotal"></div>
+          </div>
+          <div>
+            <div class="text-[0.7rem] uppercase font-mono text-slate-400">Grocery</div>
+            <div class="text-lg font-bold text-slate-200 font-mono" x-text="'Rs ' + groceryTotal"></div>
+          </div>
+          <div>
+            <div class="text-[0.7rem] uppercase font-mono text-slate-400">Beverages</div>
+            <div class="text-lg font-bold text-slate-200 font-mono" x-text="'Rs ' + beveragesTotal"></div>
+          </div>
+          <div class="bg-gradient-to-r from-sky-500/20 to-indigo-500/20 rounded-xl p-2 border border-sky-500/30">
+            <div class="text-[0.7rem] uppercase font-mono text-sky-300 font-bold">Grand Total</div>
+            <div class="text-xl font-black text-sky-300 font-mono" x-text="'Rs ' + grandTotal"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Invoice Console (4 cols) -->
+      <div class="lg:col-span-4 glass rounded-3xl p-5 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+            <h2 class="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <span>📜</span> Invoice Preview
+            </h2>
+            <span class="text-xs text-emerald-400 font-mono" x-text="statusMsg"></span>
+          </div>
+
+          <pre class="bg-slate-950/80 border border-white/5 rounded-2xl p-4 font-mono text-xs text-emerald-300 leading-relaxed overflow-x-auto min-h-[320px]" x-text="invoiceText"></pre>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-slate-500 font-mono">
+          <span>SYSTEM READY</span>
+          <span>ANTEIKU POS</span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    function billingApp() {
+      return {
+        customer: { name: '', phone: '', id: '' },
+        prices: {
+          Cosmetics: { 'Body Soap': 10, 'Hair Cream': 25, 'Hair Spray': 50, 'Body Spray': 50 },
+          Grocery: { 'Sugar': 100, 'Tea': 15, 'Coffee': 50, 'Rice': 150, 'Wheat': 160 },
+          Beverages: { 'Pepsi': 30, 'Sprite': 35, 'Coke': 30, 'Mojitos': 25, 'Thumbs Up': 35 }
+        },
+        quantities: {
+          Cosmetics: { 'Body Soap': 0, 'Hair Cream': 0, 'Hair Spray': 0, 'Body Spray': 0 },
+          Grocery: { 'Sugar': 0, 'Tea': 0, 'Coffee': 0, 'Rice': 0, 'Wheat': 0 },
+          Beverages: { 'Pepsi': 0, 'Sprite': 0, 'Coke': 0, 'Mojitos': 0, 'Thumbs Up': 0 }
+        },
+        statusMsg: 'Ready',
+        invoiceText: 'ANTEIKU SMART BILLING DESK\n--------------------------------\nInvoice will appear here after clicking "Generate Invoice".',
+
+        calculateCategoryTotal(cat) {
+          let total = 0;
+          const catPrices = this.prices[cat];
+          const catQtys = this.quantities[cat];
+          for (let item in catPrices) {
+            const q = parseInt(catQtys[item]) || 0;
+            total += catPrices[item] * q;
+          }
+          return total;
+        },
+
+        get cosmeticsTotal() { return this.calculateCategoryTotal('Cosmetics'); },
+        get groceryTotal() { return this.calculateCategoryTotal('Grocery'); },
+        get beveragesTotal() { return this.calculateCategoryTotal('Beverages'); },
+        get grandTotal() { return this.cosmeticsTotal + this.groceryTotal + this.beveragesTotal; },
+
+        generateInvoice() {
+          const name = this.customer.name.trim() || 'Walk-in Customer';
+          const phone = this.customer.phone.trim() || 'N/A';
+          const id = this.customer.id.trim() || 'N/A';
+
+          let lines = [
+            'ANTEIKU SMART BILLING DESK',
+            '--------------------------------',
+            `Customer : ${name}`,
+            `Phone    : ${phone}`,
+            `ID       : ${id}`,
+            '--------------------------------',
+            'ITEMS SELECTED:'
+          ];
+
+          let anyItems = false;
+          for (let cat in this.prices) {
+            let catHeaderAdded = false;
+            for (let item in this.prices[cat]) {
+              const qty = parseInt(this.quantities[cat][item]) || 0;
+              if (qty > 0) {
+                if (!catHeaderAdded) {
+                  lines.push(`\n[${cat}]`);
+                  catHeaderAdded = true;
+                }
+                anyItems = true;
+                const price = this.prices[cat][item];
+                lines.append ? lines.push(`${item.padEnd(14)} x${String(qty).padStart(2)}  Rs ${price * qty}`) : lines.push(`${item.padEnd(14)} x${String(qty).padStart(2)}  Rs ${price * qty}`);
+              }
+            }
+          }
+
+          if (!anyItems) {
+            lines.push('\nNo products selected');
+          }
+
+          lines.push(
+            '\n--------------------------------',
+            `Cosmetics : Rs ${this.cosmeticsTotal}`,
+            `Grocery   : Rs ${this.groceryTotal}`,
+            `Beverages : Rs ${this.beveragesTotal}`,
+            `Grand Total: Rs ${this.grandTotal}`,
+            '--------------------------------',
+            'Thank you for shopping with us!'
+          );
+
+          this.invoiceText = lines.join('\n');
+          this.statusMsg = 'Generated ✓';
+        },
+
+        clearAll() {
+          this.customer = { name: '', phone: '', id: '' };
+          for (let cat in this.quantities) {
+            for (let item in this.quantities[cat]) {
+              this.quantities[cat][item] = 0;
+            }
+          }
+          this.invoiceText = 'ANTEIKU SMART BILLING DESK\n--------------------------------\nInvoice cleared.';
+          this.statusMsg = 'Cleared';
+        }
+      }
+    }
+  </script>
+</body>
+</html>

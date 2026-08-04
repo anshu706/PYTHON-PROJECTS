@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classic Minesweeper</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    body { background-color: #030305; color: #fff; font-family: system-ui, sans-serif; min-height: 100vh; user-select: none; }
+    .glass { background: rgba(14, 14, 22, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .mine-cell { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; border-radius: 6px; cursor: pointer; }
+    .mine-hidden { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .mine-hidden:hover { background: rgba(255, 255, 255, 0.12); }
+    .mine-revealed { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.03); }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="minesweeperApp()" @contextmenu.prevent>
+  <div class="relative z-10 glass rounded-3xl p-8 shadow-2xl space-y-6 text-center">
+    <div class="flex justify-between items-center border-b border-white/10 pb-4">
+      <h1 class="text-2xl font-black uppercase tracking-tight bg-gradient-to-r from-rose-400 to-amber-400 bg-clip-text text-transparent">
+        💣 Minesweeper
+      </h1>
+      <div class="flex gap-4 font-mono text-xs">
+        <div>Mines Left: <span class="text-rose-400 font-bold" x-text="minesLeft"></span></div>
+        <button @click="resetGame" class="text-base">😀</button>
+      </div>
+    </div>
+
+    <!-- 9x9 Grid -->
+    <div class="grid grid-cols-9 gap-1.5 justify-center">
+      <template x-for="(row, r) in grid" :key="r">
+        <template x-for="(cell, c) in row" :key="c">
+          <div class="mine-cell"
+               :class="cell.revealed ? 'mine-revealed' : 'mine-hidden'"
+               @click="clickCell(r, c)"
+               @contextmenu.prevent="flagCell(r, c)">
+            <span x-show="cell.revealed && cell.mine">💣</span>
+            <span x-show="cell.revealed && !cell.mine && cell.count > 0" :class="colors[cell.count]" x-text="cell.count"></span>
+            <span x-show="!cell.revealed && cell.flagged">🚩</span>
+          </div>
+        </template>
+      </template>
+    </div>
+
+    <template x-if="won || gameOver">
+      <div class="font-bold text-lg pt-2" :class="won?'text-emerald-400':'text-rose-400'" x-text="won?'🎉 Victory! Swept clean!':'💥 KABOOM! You hit a mine!'"></div>
+    </template>
+  </div>
+
+  <script>
+    function minesweeperApp() {
+      return {
+        rows: 9, cols: 9, mines: 10, grid: [], gameOver: false, won: false, minesLeft: 10,
+        colors: ['', 'text-blue-400', 'text-emerald-400', 'text-rose-400', 'text-purple-400', 'text-amber-400', 'text-cyan-400', 'text-pink-400'],
+        init() { this.resetGame(); },
+        resetGame() {
+          this.gameOver = false; this.won = false; this.minesLeft = this.mines;
+          this.grid = Array.from({length: this.rows}, () => Array.from({length: this.cols}, () => ({ mine: false, revealed: false, flagged: false, count: 0 })));
+          let placed = 0;
+          while (placed < this.mines) {
+            let r = Math.floor(Math.random() * this.rows), c = Math.floor(Math.random() * this.cols);
+            if (!this.grid[r][c].mine) { this.grid[r][c].mine = true; placed++; }
+          }
+          for (let r = 0; r < this.rows; r++) {
+            for (let c = 0; c < this.cols; c++) {
+              if (this.grid[r][c].mine) continue;
+              let count = 0;
+              for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                  let nr = r + dr, nc = c + dc;
+                  if (nr>=0 && nr<this.rows && nc>=0 && nc<this.cols && this.grid[nr][nc].mine) count++;
+                }
+              }
+              this.grid[r][c].count = count;
+            }
+          }
+        },
+        clickCell(r, c) {
+          if (this.gameOver || this.won || this.grid[r][c].flagged || this.grid[r][c].revealed) return;
+          this.grid[r][c].revealed = true;
+          if (this.grid[r][c].mine) { this.gameOver = true; this.revealAll(); return; }
+          if (this.grid[r][c].count === 0) {
+            for (let dr = -1; dr <= 1; dr++) {
+              for (let dc = -1; dc <= 1; dc++) {
+                let nr = r + dr, nc = c + dc;
+                if (nr>=0 && nr<this.rows && nc>=0 && nc<this.cols) this.clickCell(nr, nc);
+              }
+            }
+          }
+          this.checkWin();
+        },
+        flagCell(r, c) {
+          if (this.gameOver || this.won || this.grid[r][c].revealed) return;
+          this.grid[r][c].flagged = !this.grid[r][c].flagged;
+          this.minesLeft += this.grid[r][c].flagged ? -1 : 1;
+        },
+        revealAll() {
+          this.grid.forEach(row => row.forEach(cell => { if (cell.mine) cell.revealed = true; }));
+        },
+        checkWin() {
+          let revCount = 0;
+          this.grid.forEach(row => row.forEach(cell => { if (cell.revealed && !cell.mine) revCount++; }));
+          if (revCount === (this.rows * this.cols - this.mines)) this.won = true;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

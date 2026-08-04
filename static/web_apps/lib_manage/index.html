@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neo Library Manager — Book Management Hub</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { brandBase: '#0d2818', sidebarColor: '#1a3a2a', cardColor: '#1f4d38' }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { background-color: #0d2818; color: #ffffff; font-family: system-ui, sans-serif; min-height: 100vh; }
+    .glass { background: rgba(26, 58, 42, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glow-input { background: rgba(13, 40, 24, 0.8); border: 1px solid rgba(0, 208, 132, 0.2); transition: all 0.2s; color: #fff; }
+    .glow-input:focus { border-color: #00d084; outline: none; box-shadow: 0 0 15px rgba(0, 208, 132, 0.25); }
+    .btn-emerald { background: linear-gradient(135deg, #00d084 0%, #00b8a9 100%); transition: all 0.3s; color: #0d2818; font-weight: 700; }
+    .btn-emerald:hover { box-shadow: 0 0 20px rgba(0, 208, 132, 0.4); transform: translateY(-1px); }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="libApp()">
+
+  <!-- Ambient Glow -->
+  <div class="fixed top-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-emerald-600/10 blur-[130px] pointer-events-none"></div>
+  <div class="fixed bottom-[-10%] right-[10%] w-[500px] h-[500px] rounded-full bg-teal-600/10 blur-[130px] pointer-events-none"></div>
+
+  <div class="relative z-10 w-full max-w-5xl mx-auto glass rounded-3xl p-6 sm:p-8 shadow-2xl">
+    
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-white/10 pb-6 mb-8 gap-4">
+      <div>
+        <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-amber-300 bg-clip-text text-transparent flex items-center gap-3">
+          <span>📚</span> NEO LIBRARY MANAGER
+        </h1>
+        <p class="text-emerald-200/70 text-sm mt-1">Book catalog, inventory tracking & borrowing system</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-mono px-3 py-1.5 rounded-full border border-emerald-500/30 text-emerald-300 bg-emerald-500/10">
+          SYSTEM ACTIVE
+        </span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex gap-3 mb-6">
+      <button @click="currentView = 'catalog'" class="px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
+              :class="currentView === 'catalog' ? 'btn-emerald' : 'bg-white/5 text-slate-300 hover:bg-white/10'">
+        📖 Book Catalog
+      </button>
+      <button @click="currentView = 'add'" class="px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
+              :class="currentView === 'add' ? 'btn-emerald' : 'bg-white/5 text-slate-300 hover:bg-white/10'">
+        ➕ Add New Book
+      </button>
+    </div>
+
+    <!-- Catalog View -->
+    <template x-if="currentView === 'catalog'">
+      <div class="space-y-6">
+        
+        <!-- Search & Filter Bar -->
+        <div class="flex gap-4">
+          <input type="text" x-model="searchQuery" placeholder="Search by title, author or code..." class="glow-input w-full px-4 py-2.5 rounded-xl text-sm">
+        </div>
+
+        <!-- Book Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <template x-for="book in filteredBooks" :key="book.code">
+            <div class="bg-slate-900/60 border border-white/10 rounded-2xl p-5 flex flex-col justify-between hover:border-emerald-500/30 transition-all">
+              <div>
+                <div class="flex justify-between items-start mb-2">
+                  <h3 class="font-bold text-lg text-white" x-text="book.title"></h3>
+                  <span class="text-[0.65rem] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" x-text="'CODE: ' + book.code"></span>
+                </div>
+                <p class="text-xs text-emerald-200/70 mb-3" x-text="'Author: ' + book.author"></p>
+                
+                <div class="grid grid-cols-2 gap-2 text-xs font-mono text-slate-300 bg-white/5 p-3 rounded-xl mb-4">
+                  <div>Pages: <span class="text-white font-bold" x-text="book.pages"></span></div>
+                  <div>Price: <span class="text-amber-300 font-bold" x-text="'Rs ' + book.price"></span></div>
+                  <div class="col-span-2">Stock: <span class="font-bold" :class="book.stock > 0 ? 'text-emerald-400' : 'text-rose-400'" x-text="book.stock + ' copies available'"></span></div>
+                </div>
+              </div>
+
+              <div class="flex gap-2 pt-2 border-t border-white/5">
+                <button @click="borrowBook(book)" :disabled="book.stock <= 0" class="btn-emerald flex-1 py-2 rounded-xl text-xs disabled:opacity-30">
+                  Borrow
+                </button>
+                <button @click="returnBook(book)" class="bg-white/10 text-white hover:bg-white/20 flex-1 py-2 rounded-xl text-xs font-bold">
+                  Return
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+
+      </div>
+    </template>
+
+    <!-- Add Book Form View -->
+    <template x-if="currentView === 'add'">
+      <div class="bg-slate-900/60 border border-white/10 rounded-2xl p-6 max-w-xl mx-auto space-y-4">
+        <h2 class="text-lg font-bold text-white mb-4">Add Book to Library Database</h2>
+
+        <div>
+          <label class="block text-xs text-slate-300 mb-1">Book Title</label>
+          <input type="text" x-model="newBook.title" class="glow-input w-full px-4 py-2.5 rounded-xl text-sm" placeholder="e.g. Clean Code">
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-300 mb-1">Author Name</label>
+          <input type="text" x-model="newBook.author" class="glow-input w-full px-4 py-2.5 rounded-xl text-sm" placeholder="e.g. Robert C. Martin">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-slate-300 mb-1">Total Pages</label>
+            <input type="number" x-model.number="newBook.pages" class="glow-input w-full px-4 py-2.5 rounded-xl text-sm" placeholder="300">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-300 mb-1">Price (Rs)</label>
+            <input type="number" x-model.number="newBook.price" class="glow-input w-full px-4 py-2.5 rounded-xl text-sm" placeholder="500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-slate-300 mb-1">Book Code (ID)</label>
+            <input type="number" x-model.number="newBook.code" class="glow-input w-full px-4 py-2.5 rounded-xl text-sm" placeholder="789">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-300 mb-1">Initial Stock Copies</label>
+            <input type="number" x-model.number="newBook.stock" class="glow-input w-full px-4 py-2.5 rounded-xl text-sm" placeholder="5">
+          </div>
+        </div>
+
+        <button @click="addBook" class="btn-emerald w-full py-3 rounded-xl text-sm mt-4">
+          🚀 Add Book to Catalog
+        </button>
+      </div>
+    </template>
+
+  </div>
+
+  <script>
+    function libApp() {
+      return {
+        currentView: 'catalog',
+        searchQuery: '',
+        books: [
+          { title: "Introduction to C", author: "Dennis Ritchie", pages: 280, price: 350, code: 123, stock: 2 },
+          { title: "Introduction to Python", author: "Guido Rossum", pages: 320, price: 420, code: 456, stock: 3 },
+          { title: "Fundamentals of Thermodynamics", author: "Moran", pages: 510, price: 670, code: 153, stock: 13 }
+        ],
+        newBook: { title: '', author: '', pages: 300, price: 500, code: Math.floor(Math.random() * 900) + 100, stock: 5 },
+
+        get filteredBooks() {
+          const q = this.searchQuery.toLowerCase().trim();
+          if (!q) return this.books;
+          return this.books.filter(b => b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.code.toString().includes(q));
+        },
+
+        borrowBook(book) {
+          if (book.stock > 0) {
+            book.stock--;
+            alert(`✅ Borrowed 1 copy of "${book.title}". Remaining stock: ${book.stock}`);
+          }
+        },
+
+        returnBook(book) {
+          book.stock++;
+          alert(`✅ Returned 1 copy of "${book.title}". New stock: ${book.stock}`);
+        },
+
+        addBook() {
+          if (!this.newBook.title || !this.newBook.author) {
+            alert("Please provide both title and author!");
+            return;
+          }
+          this.books.push({ ...this.newBook });
+          alert(`🎉 "${this.newBook.title}" added to catalog!`);
+          this.newBook = { title: '', author: '', pages: 300, price: 500, code: Math.floor(Math.random() * 900) + 100, stock: 5 };
+          this.currentView = 'catalog';
+        }
+      }
+    }
+  </script>
+</body>
+</html>

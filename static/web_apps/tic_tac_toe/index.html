@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sinter Toe — Premium Board Game</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background visual elements -->
+  <div class="ambient-glow glow-1" aria-hidden="true"></div>
+  <div class="ambient-glow glow-2" aria-hidden="true"></div>
+  <div class="grid-overlay" aria-hidden="true"></div>
+
+  <main class="wrapper">
+    <div class="panel">
+
+      <!-- Header bar -->
+      <div class="panel-header">
+        <span class="logo-mark">🌐 SINTER_TOE</span>
+        <div class="status-badge" id="status-badge">
+          <span class="turn-dot"></span>
+          <span id="status">Player X's Turn</span>
+        </div>
+      </div>
+
+      <h1>Sinter Toe</h1>
+
+      <!-- Stats / Scoreboard -->
+      <div class="stats-row">
+        <div class="stat-box box-x">
+          <span class="stat-lbl">X Wins</span>
+          <span class="stat-val" id="wins-x">0</span>
+        </div>
+        <div class="stat-box box-draws">
+          <span class="stat-lbl">Draws</span>
+          <span class="stat-val" id="draws-val">0</span>
+        </div>
+        <div class="stat-box box-o">
+          <span class="stat-lbl">O Wins</span>
+          <span class="stat-val" id="wins-o">0</span>
+        </div>
+      </div>
+
+      <!-- Game Board Grid -->
+      <div class="board-container">
+        <div class="board" id="board">
+          <div class="cell" data-index="0"></div>
+          <div class="cell" data-index="1"></div>
+          <div class="cell" data-index="2"></div>
+          <div class="cell" data-index="3"></div>
+          <div class="cell" data-index="4"></div>
+          <div class="cell" data-index="5"></div>
+          <div class="cell" data-index="6"></div>
+          <div class="cell" data-index="7"></div>
+          <div class="cell" data-index="8"></div>
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="footer-actions">
+        <button id="reset-btn" class="btn-restart">Restart Game</button>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

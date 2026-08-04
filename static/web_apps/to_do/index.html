@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow Studio — Task Manager</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { brandBase: '#0f172a', panelBg: '#111c38' }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { background-color: #0f172a; color: #ecf3ff; font-family: system-ui, sans-serif; min-height: 100vh; }
+    .glass { background: rgba(17, 28, 56, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glow-input { background: rgba(11, 19, 40, 0.8); border: 1px solid rgba(45, 212, 191, 0.2); transition: all 0.2s; color: #fff; }
+    .glow-input:focus { border-color: #2dd4bf; outline: none; box-shadow: 0 0 15px rgba(45, 212, 191, 0.25); }
+    .btn-teal { background: linear-gradient(135deg, #2dd4bf 0%, #06b6d4 100%); transition: all 0.3s; color: #0f172a; font-weight: 700; }
+    .btn-teal:hover { box-shadow: 0 0 20px rgba(45, 212, 191, 0.4); transform: translateY(-1px); }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="todoApp()">
+
+  <!-- Ambient Glow -->
+  <div class="fixed top-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-teal-600/10 blur-[130px] pointer-events-none"></div>
+  <div class="fixed bottom-[-10%] right-[10%] w-[500px] h-[500px] rounded-full bg-cyan-600/10 blur-[130px] pointer-events-none"></div>
+
+  <div class="relative z-10 w-full max-w-4xl mx-auto glass rounded-3xl p-6 sm:p-8 shadow-2xl">
+    
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-white/10 pb-6 mb-8 gap-4">
+      <div>
+        <h1 class="text-3xl font-black tracking-tight bg-gradient-to-r from-teal-400 to-amber-300 bg-clip-text text-transparent flex items-center gap-3">
+          <span>✅</span> TASKFLOW STUDIO
+        </h1>
+        <p class="text-slate-400 text-sm mt-1">Productivity & Task Management Workspace</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-mono px-3 py-1.5 rounded-full border border-teal-500/30 text-teal-300 bg-teal-500/10" x-text="completedCount + '/' + tasks.length + ' COMPLETED'">
+        </span>
+      </div>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="flex gap-3 mb-8">
+      <input type="text" x-model="newTaskText" @keyup.enter="addTask" placeholder="Add a new task..." class="glow-input flex-1 px-4 py-3 rounded-xl text-sm">
+      <button @click="addTask" class="btn-teal px-6 py-3 rounded-xl text-sm font-bold">
+        ➕ Add Task
+      </button>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="flex gap-2 mb-6 border-b border-white/10 pb-4">
+      <button @click="filter = 'all'" class="px-4 py-2 rounded-xl text-xs font-bold transition-all"
+              :class="filter === 'all' ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' : 'text-slate-400 hover:text-white'">
+        All (<span x-text="tasks.length"></span>)
+      </button>
+      <button @click="filter = 'active'" class="px-4 py-2 rounded-xl text-xs font-bold transition-all"
+              :class="filter === 'active' ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' : 'text-slate-400 hover:text-white'">
+        Active (<span x-text="tasks.length - completedCount"></span>)
+      </button>
+      <button @click="filter = 'completed'" class="px-4 py-2 rounded-xl text-xs font-bold transition-all"
+              :class="filter === 'completed' ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' : 'text-slate-400 hover:text-white'">
+        Completed (<span x-text="completedCount"></span>)
+      </button>
+    </div>
+
+    <!-- Task List -->
+    <div class="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+      <template x-if="filteredTasks.length === 0">
+        <div class="bg-slate-900/50 border border-white/5 rounded-2xl p-8 text-center text-slate-400">
+          <p class="font-bold mb-1">No tasks in this view</p>
+          <p class="text-xs text-slate-500">Add a task above or switch your filter!</p>
+        </div>
+      </template>
+
+      <template x-for="t in filteredTasks" :key="t.id">
+        <div class="p-4 rounded-2xl border transition-all duration-200 flex items-center justify-between"
+             :class="t.completed ? 'bg-slate-900/40 border-white/5 opacity-60' : 'bg-slate-900/80 border-white/10 hover:border-teal-500/30'">
+          
+          <div class="flex items-center gap-3">
+            <input type="checkbox" x-model="t.completed" class="w-5 h-5 rounded accent-teal-400 cursor-pointer">
+            <span class="text-sm font-medium" :class="t.completed ? 'line-through text-slate-400' : 'text-white'" x-text="t.text"></span>
+          </div>
+
+          <button @click="deleteTask(t.id)" class="text-slate-500 hover:text-rose-400 text-sm font-bold px-2 py-1">
+            ✕
+          </button>
+        </div>
+      </template>
+    </div>
+
+  </div>
+
+  <script>
+    function todoApp() {
+      return {
+        tasks: [
+          { id: 1, text: "Finish Python project migration", completed: true },
+          { id: 2, text: "Review SINTER v4 UI responsiveness", completed: false },
+          { id: 3, text: "Test all Chrome tab Web Apps", completed: false }
+        ],
+        newTaskText: '',
+        filter: 'all',
+
+        get completedCount() {
+          return this.tasks.filter(t => t.completed).length;
+        },
+
+        get filteredTasks() {
+          if (this.filter === 'active') return this.tasks.filter(t => !t.completed);
+          if (this.filter === 'completed') return this.tasks.filter(t => t.completed);
+          return this.tasks;
+        },
+
+        addTask() {
+          if (!this.newTaskText.trim()) return;
+          this.tasks.push({
+            id: Date.now(),
+            text: this.newTaskText.trim(),
+            completed: false
+          });
+          this.newTaskText = '';
+        },
+
+        deleteTask(id) {
+          this.tasks = this.tasks.filter(t => t.id !== id);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

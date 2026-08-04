@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mastermind Codebreaker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    body { background-color: #030305; color: #fff; font-family: system-ui, sans-serif; min-height: 100vh; }
+    .glass { background: rgba(14, 14, 22, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .btn-color { width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); transition: transform 0.15s; }
+    .btn-color:hover { transform: scale(1.1); }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen relative" x-data="mastermindApp()">
+  <div class="relative z-10 w-full max-w-md mx-auto glass rounded-3xl p-8 shadow-2xl space-y-6">
+    <div class="text-center">
+      <h1 class="text-3xl font-black uppercase tracking-tight bg-gradient-to-r from-amber-400 to-rose-400 bg-clip-text text-transparent">
+        🧩 Mastermind
+      </h1>
+      <p class="text-slate-400 text-xs mt-1">Crack the 4-color secret code in 10 turns!</p>
+    </div>
+
+    <!-- Guesses History -->
+    <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+      <template x-for="(g, idx) in history" :key="idx">
+        <div class="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5 text-xs font-mono">
+          <div class="flex gap-2">
+            <template x-for="c in g.guess" :key="c">
+              <div class="w-6 h-6 rounded-full border border-white/20" :style="`background-color: ${colors[c]}`"></div>
+            </template>
+          </div>
+          <div class="text-slate-300">
+            🟢 Exact: <span class="text-emerald-400 font-bold" x-text="g.exact"></span> | 
+            🟡 Partial: <span class="text-amber-400 font-bold" x-text="g.partial"></span>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- Current Slot Picker -->
+    <template x-if="!over">
+      <div class="space-y-4 pt-2 border-t border-white/10">
+        <div class="flex justify-center gap-3">
+          <template x-for="(cIdx, slot) in current" :key="slot">
+            <div class="w-10 h-10 rounded-full border-2 border-dashed border-white/40 flex items-center justify-center cursor-pointer"
+                 :style="cIdx !== null ? `background-color: ${colors[cIdx]}; border-style: solid;` : ''"
+                 @click="current[slot] = (current[slot] + 1) % colors.length">
+            </div>
+          </template>
+        </div>
+        <p class="text-[0.65rem] text-center text-slate-400">Click circles to cycle colors, then submit</p>
+        <button @click="submitGuess" class="w-full py-3 bg-gradient-to-r from-amber-400 to-rose-400 text-slate-950 font-bold rounded-xl text-sm">
+          Submit Code
+        </button>
+      </div>
+    </template>
+
+    <template x-if="won || lost">
+      <div class="text-center space-y-3 pt-2">
+        <p class="font-bold text-lg" :class="won?'text-emerald-400':'text-rose-400'" x-text="won?'🎉 Code Cracked! You Win!':'💀 Game Over! Code revealed.'"></p>
+        <button @click="resetGame" class="w-full py-3 bg-white/10 rounded-xl font-bold text-sm hover:bg-white/20">
+          New Game
+        </button>
+      </div>
+    </template>
+  </div>
+
+  <script>
+    function mastermindApp() {
+      return {
+        colors: ['#f43f5e', '#38bdf8', '#34d399', '#fbbf24', '#a78bfa', '#f97316'],
+        secret: [], current: [0, 0, 0, 0], history: [], won: false, lost: false,
+        get over() { return this.won || this.lost; },
+        init() { this.resetGame(); },
+        resetGame() {
+          this.secret = Array.from({length: 4}, () => Math.floor(Math.random() * this.colors.length));
+          this.current = [0, 1, 2, 3]; this.history = []; this.won = false; this.lost = false;
+        },
+        submitGuess() {
+          let exact = 0, partial = 0;
+          let secCopy = [...this.secret];
+          let guessCopy = [...this.current];
+
+          for (let i = 0; i < 4; i++) {
+            if (guessCopy[i] === secCopy[i]) {
+              exact++; secCopy[i] = null; guessCopy[i] = -1;
+            }
+          }
+          for (let i = 0; i < 4; i++) {
+            if (guessCopy[i] !== -1) {
+              let idx = secCopy.indexOf(guessCopy[i]);
+              if (idx !== -1) { partial++; secCopy[idx] = null; }
+            }
+          }
+
+          this.history.push({ guess: [...this.current], exact, partial });
+          if (exact === 4) this.won = true;
+          else if (this.history.length >= 10) this.lost = true;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

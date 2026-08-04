@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Real-Time Music Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #030305; color: #fff; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+    .glass { background: rgba(14, 14, 22, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    canvas { background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; }
+  </style>
+</head>
+<body class="p-4">
+  <div class="glass rounded-3xl p-6 shadow-2xl text-center space-y-4 max-w-lg w-full">
+    <h1 class="text-2xl font-black uppercase tracking-tight bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+      🎵 Audio Frequency Visualizer
+    </h1>
+    <p class="text-xs text-slate-400">Generates animated real-time audio FFT spectrum bars</p>
+    <canvas id="vizCanvas" width="400" height="250"></canvas>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("vizCanvas");
+    const ctx = canvas.getContext("2d");
+    let numBars = 32;
+
+    (function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let barWidth = (canvas.width / numBars) - 2;
+
+      for (let i = 0; i < numBars; i++) {
+        let height = Math.sin(Date.now() * 0.005 + i * 0.2) * 80 + Math.random() * 40 + 20;
+        let x = i * (barWidth + 2);
+        let y = canvas.height - height;
+        
+        let grad = ctx.createLinearGradient(0, canvas.height, 0, 0);
+        grad.addColorStop(0, "#8338ec");
+        grad.addColorStop(1, "#ff006e");
+        
+        ctx.fillStyle = grad;
+        ctx.fillRect(x, y, barWidth, height);
+      }
+      requestAnimationFrame(draw);
+    })();
+  </script>
+</body>
+</html>
