@@ -8,6 +8,9 @@
     <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind" />
     <img src="https://img.shields.io/badge/Alpine.js-8BC0D0?style=for-the-badge&logo=alpine.js&logoColor=white" alt="Alpine.js" />
   </p>
+  <p>
+    <strong>🔗 <a href="https://python-projects-seven-ruddy.vercel.app/">View Live Demo on Vercel</a> 🔗</strong>
+  </p>
   <br>
 </div>
 
